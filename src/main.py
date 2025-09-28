@@ -3,9 +3,7 @@ import matplotlib.pyplot as plt  # do wyświetlania obrazów
 from pathlib import Path  # do pracy ze ścieżkami
 
 # Ścieżki do folderów
-#DATA_DIR = Path("../data/images")
 DATA_DIR = Path(__file__).parent.parent / "data" / "images"
-#OUTPUT_DIR = Path("../outputs")
 OUTPUT_DIR = Path(__file__).parent.parent / "outputs"
 
 # Tworzymy folder outputs, jeśli nie istnieje
