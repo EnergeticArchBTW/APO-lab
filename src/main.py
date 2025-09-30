@@ -6,6 +6,7 @@ from tkinter import Toplevel, Canvas #do okna z obrazem
 from PIL import Image, ImageTk  # do konwersji obrazów do formatu Tkinter
 from menu import MainMenu # plik main.py definiuje listę rozwijaną
 import numpy as np # do operacji na tablicach
+import threading # do wielowątkowości
 
 # Ścieżki do folderów
 DATA_DIR = Path(__file__).parent.parent / "data" / "images"
@@ -42,14 +43,7 @@ def open_and_show_image():
         filetypes=[("Obrazy", "*.bmp;*.tif;*.png;*.jpg;*.jpeg")]
     )
     if file_path:
-        """
-        image = cv2.imread(file_path)
-        if image is not None:
-            show_image(image, title=f"{Path(file_path).name}") #tytuł okna gdzie jest obraz
-        else:
-            print("Nie udało się wczytać obrazu.")
-        """
-        # Wczytaj plik jako bajty, potem zdekoduj przez OpenCV
+        # Wczytaj plik jako bajty, potem zdekoduj przez OpenCV (by polskie nazwy działały)
         file_path_obj = Path(file_path)
         with open(file_path_obj, "rb") as f:
             file_bytes = np.asarray(bytearray(f.read()), dtype=np.uint8)
@@ -60,18 +54,5 @@ def open_and_show_image():
             print("Nie udało się wczytać obrazu.")
 
 if __name__ == "__main__":
-    """
-    # przykład użycia
-    test_file = "example.jpg"  # wrzuć plik do data/images/
-
-    # 1. Wczytaj
-    img = load_image(test_file)
-
-    # 2. Wyświetl
-    show_image(img, "Oryginalny obraz")
-
-    # 3. Zapisz kopię
-    save_copy(img, "example_copy.jpg")
-    """
     menu = MainMenu(open_and_show_image, save_copy, show_image)
     menu.mainloop()
