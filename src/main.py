@@ -47,11 +47,32 @@ def show_image(image, title="Podgląd obrazu"):
     win.bind("<FocusIn>", on_focus)
     current_window = win
 
-def save_copy(image, filename):
-    """Zapisuje kopię obrazu do folderu outputs/."""
-    out_path = OUTPUT_DIR / filename
-    cv2.imwrite(str(out_path), image)
-    print(f"Zapisano kopię obrazu w: {out_path}")
+def save_image():
+    """Zapisuje sfocusowany obraz w wybranej przez użytkownika lokalizacji."""
+    if current_window in opened_images:
+        img_info = opened_images[current_window]
+        image = img_info["image"]
+        # Prośba o lokalizację i nazwę pliku
+        file_path = filedialog.asksaveasfilename(
+            defaultextension=".jpg",
+            filetypes=[("Obrazy", "*.bmp;*.tif;*.png;*.jpg;*.jpeg")],
+            initialfile=img_info["filename"]
+        )
+        if file_path:
+            # zapisz obraz z polską nazwą
+            with open(file_path, "wb") as f:
+                # Dobierz format zapisu na podstawie rozszerzenia
+                ext = Path(file_path).suffix
+                ret, buf = cv2.imencode(ext, image)
+                # Zapisz tylko jeśli kodowanie się powiodło
+                if ret:
+                    buf.tofile(f)
+                else:
+                    print("Błąd przy zapisie obrazu.")
+                    return
+            print(f"Zapisano obraz w: {file_path}")
+    else:
+        print("Brak aktywnego okna z obrazem do zapisu.")
 
 def open_and_show_image():
     """Prosi użytkownika o wybór pliku i wyświetla obraz w nowym oknie."""
@@ -99,5 +120,5 @@ def duplicate_focused_image():
 
 if __name__ == "__main__":
     # threading.Thread(target=show_focused_number, daemon=True).start()
-    menu = MainMenu(open_and_show_image, save_copy, duplicate_focused_image)
+    menu = MainMenu(open_and_show_image, save_image, duplicate_focused_image)
     menu.mainloop()
