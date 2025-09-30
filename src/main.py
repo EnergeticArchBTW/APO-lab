@@ -75,17 +75,29 @@ def open_and_show_image():
         else:
             print("Nie udało się wczytać obrazu.")
 
-def show_focused_number():
-    """Wyświetla ID aktualnie aktywnego okna."""
-    while True:
-        if current_window in opened_images:
-            img_info = opened_images[current_window]
-            print(f"Aktualne okno ID: {img_info['id']}, Nazwa pliku: {img_info['filename']}")
-        else:
-            print("Brak aktywnego okna z obrazem.")
-        time.sleep(5)  # co 5 sekund
+def duplicate_focused_image():
+    """Duplikuje aktualnie sfocusowany obraz i wyświetla w nowym oknie."""
+    if current_window in opened_images:
+        img_info = opened_images[current_window]
+        image_copy = img_info["image"].copy()
+        # Dodaj _copy do nazwy pliku przed rozszerzeniem
+        stem, ext = Path(img_info["filename"]).stem, Path(img_info["filename"]).suffix
+        new_name = f"{stem}_copy{ext}"
+        show_image(image_copy, title=new_name)
+    else:
+        print("Brak aktywnego okna z obrazem do duplikacji.")
+
+# def show_focused_number():
+#     """Wyświetla ID aktualnie aktywnego okna."""
+#     while True:
+#         if current_window in opened_images:
+#             img_info = opened_images[current_window]
+#             print(f"Aktualne okno ID: {img_info['id']}, Nazwa pliku: {img_info['filename']}")
+#         else:
+#             print("Brak aktywnego okna z obrazem.")
+#         time.sleep(5)  # co 5 sekund
 
 if __name__ == "__main__":
-    threading.Thread(target=show_focused_number, daemon=True).start()
-    menu = MainMenu(open_and_show_image, save_copy, show_image)
+    # threading.Thread(target=show_focused_number, daemon=True).start()
+    menu = MainMenu(open_and_show_image, save_copy, duplicate_focused_image)
     menu.mainloop()
