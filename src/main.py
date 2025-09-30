@@ -7,6 +7,11 @@ from PIL import Image, ImageTk  # do konwersji obrazów do formatu Tkinter
 from menu import MainMenu # plik main.py definiuje listę rozwijaną
 import numpy as np # do operacji na tablicach
 import threading # do wielowątkowości
+import time # do opóźnień
+
+opened_images = {}      # słownik: okno -> {"id": ..., "image": ..., "filename": ...}
+current_id = 0       # licznik unikalnych ID dla okien
+current_window = None   # wskaźnik na aktualnie aktywne okno
 
 # Ścieżki do folderów
 DATA_DIR = Path(__file__).parent.parent / "data" / "images"
@@ -17,6 +22,7 @@ OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 def show_image(image, title="Podgląd obrazu"):
     """Wyświetla obraz w nowym oknie Tkinter z Canvas."""
+    global current_id, current_window
     win = Toplevel()
     win.title(title)
 
@@ -30,6 +36,17 @@ def show_image(image, title="Podgląd obrazu"):
     canvas.create_image(0, 0, anchor="nw", image=photo)
     canvas.image = photo  # zapobiega usunięciu z pamięci
 
+    # dodaj do słownika
+    opened_images[win] = {"id": current_id, "image": image, "filename": title}
+    current_id += 1
+    # obsługa focusa
+    def on_focus(event):
+        global current_window
+        current_window = win
+
+    win.bind("<FocusIn>", on_focus)
+    current_window = win
+
 def save_copy(image, filename):
     """Zapisuje kopię obrazu do folderu outputs/."""
     out_path = OUTPUT_DIR / filename
@@ -38,6 +55,7 @@ def save_copy(image, filename):
 
 def open_and_show_image():
     """Prosi użytkownika o wybór pliku i wyświetla obraz w nowym oknie."""
+    global current_id
     file_path = filedialog.askopenfilename(
         title="Wybierz obraz",
         filetypes=[("Obrazy", "*.bmp;*.tif;*.png;*.jpg;*.jpeg")]
@@ -49,10 +67,25 @@ def open_and_show_image():
             file_bytes = np.asarray(bytearray(f.read()), dtype=np.uint8)
             image = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
         if image is not None:
-            show_image(image, title=f"{file_path_obj.name}")
+            # Dodaj ID do nazwy pliku
+            stem, ext = file_path_obj.stem, file_path_obj.suffix
+            display_name = f"{stem}[{current_id}]{ext}"
+            # Pokaz obraz
+            show_image(image, title=display_name)
         else:
             print("Nie udało się wczytać obrazu.")
 
+def show_focused_number():
+    """Wyświetla ID aktualnie aktywnego okna."""
+    while True:
+        if current_window in opened_images:
+            img_info = opened_images[current_window]
+            print(f"Aktualne okno ID: {img_info['id']}, Nazwa pliku: {img_info['filename']}")
+        else:
+            print("Brak aktywnego okna z obrazem.")
+        time.sleep(5)  # co 5 sekund
+
 if __name__ == "__main__":
+    threading.Thread(target=show_focused_number, daemon=True).start()
     menu = MainMenu(open_and_show_image, save_copy, show_image)
     menu.mainloop()
