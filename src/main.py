@@ -1,6 +1,11 @@
 import cv2  # biblioteka do wczytywania/zapisu obrazów
-import matplotlib.pyplot as plt  # do wyświetlania obrazów
+#import matplotlib.pyplot as plt  # do wyświetlania obrazów
 from pathlib import Path  # do pracy ze ścieżkami
+from tkinter import filedialog  # do okna wyboru pliku
+from tkinter import Toplevel, Canvas #do okna z obrazem
+from PIL import Image, ImageTk  # do konwersji obrazów do formatu Tkinter
+from menu import MainMenu # plik main.py definiuje listę rozwijaną
+import numpy as np # do operacji na tablicach
 
 # Ścieżki do folderów
 DATA_DIR = Path(__file__).parent.parent / "data" / "images"
@@ -9,21 +14,20 @@ OUTPUT_DIR = Path(__file__).parent.parent / "outputs"
 # Tworzymy folder outputs, jeśli nie istnieje
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
-def load_image(filename):
-    """Wczytuje obraz z folderu data/images."""
-    img_path = DATA_DIR / filename
-    image = cv2.imread(str(img_path))
-    if image is None:
-        raise FileNotFoundError(f"Nie znaleziono pliku: {img_path}")
-    return image
-
 def show_image(image, title="Podgląd obrazu"):
-    """Wyświetla obraz w oknie matplotlib (RGB)."""
-    image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)  # konwersja BGR -> RGB
-    plt.imshow(image_rgb)
-    plt.title(title)
-    plt.axis("off")
-    plt.show()
+    """Wyświetla obraz w nowym oknie Tkinter z Canvas."""
+    win = Toplevel()
+    win.title(title)
+
+    # Konwersja obrazu OpenCV (BGR) do PIL (RGB)
+    image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    pil_img = Image.fromarray(image_rgb)
+    photo = ImageTk.PhotoImage(pil_img)
+
+    canvas = Canvas(win, width=photo.width(), height=photo.height())
+    canvas.pack()
+    canvas.create_image(0, 0, anchor="nw", image=photo)
+    canvas.image = photo  # zapobiega usunięciu z pamięci
 
 def save_copy(image, filename):
     """Zapisuje kopię obrazu do folderu outputs/."""
@@ -31,7 +35,32 @@ def save_copy(image, filename):
     cv2.imwrite(str(out_path), image)
     print(f"Zapisano kopię obrazu w: {out_path}")
 
+def open_and_show_image():
+    """Prosi użytkownika o wybór pliku i wyświetla obraz w nowym oknie."""
+    file_path = filedialog.askopenfilename(
+        title="Wybierz obraz",
+        filetypes=[("Obrazy", "*.bmp;*.tif;*.png;*.jpg;*.jpeg")]
+    )
+    if file_path:
+        """
+        image = cv2.imread(file_path)
+        if image is not None:
+            show_image(image, title=f"{Path(file_path).name}") #tytuł okna gdzie jest obraz
+        else:
+            print("Nie udało się wczytać obrazu.")
+        """
+        # Wczytaj plik jako bajty, potem zdekoduj przez OpenCV
+        file_path_obj = Path(file_path)
+        with open(file_path_obj, "rb") as f:
+            file_bytes = np.asarray(bytearray(f.read()), dtype=np.uint8)
+            image = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
+        if image is not None:
+            show_image(image, title=f"{file_path_obj.name}")
+        else:
+            print("Nie udało się wczytać obrazu.")
+
 if __name__ == "__main__":
+    """
     # przykład użycia
     test_file = "example.jpg"  # wrzuć plik do data/images/
 
@@ -43,3 +72,6 @@ if __name__ == "__main__":
 
     # 3. Zapisz kopię
     save_copy(img, "example_copy.jpg")
+    """
+    menu = MainMenu(open_and_show_image, save_copy, show_image)
+    menu.mainloop()
