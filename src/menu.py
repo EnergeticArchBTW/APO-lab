@@ -1,5 +1,7 @@
 from tkinter import Tk, Menu
 
+"""Moduł definiujący główne okno aplikacji z menu."""
+
 class MainMenu(Tk):
     def __init__(self, open_callback, save_callback, duplicate_callback):
         super().__init__()
