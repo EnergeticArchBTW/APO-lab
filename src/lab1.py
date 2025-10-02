@@ -22,8 +22,7 @@ def show_image(image, title="Podgląd obrazu"):
     photo = ImageTk.PhotoImage(pil_img)
 
     canvas = Canvas(win, width=photo.width(), height=photo.height())
-    canvas.pack()
-    canvas.create_image(0, 0, anchor="nw", image=photo)
+    img_id = canvas.create_image(0, 0, anchor="nw", image=photo)
     canvas.image = photo  # zapobiega usunięciu z pamięci
 
     # dodaj do słownika
@@ -31,12 +30,49 @@ def show_image(image, title="Podgląd obrazu"):
     globals_var.current_id += 1
     # uruchom wątek monitorujący okno
     threading.Thread(target=win_thread, daemon=True, args=(win,)).start()
+    """
     # obsługa focusa
     def on_focus(event):
         globals_var.current_window = win
 
     win.bind("<FocusIn>", on_focus)
     globals_var.current_window = win
+    """
+    # ---------zmiana wielkości obrazu scrollem myszki ---------
+    # Przechowuj oryginalny obraz i aktualny zoom
+    win.original_image = image
+    win.zoom = 1.0
+
+    def update_image():
+        # Przeskaluj obraz zgodnie z win.zoom
+        # konwersja do PIL
+        pil_img = Image.fromarray(cv2.cvtColor(win.original_image, cv2.COLOR_BGR2RGB))
+        # pobieranie rozmiaru
+        w, h = pil_img.size
+        # aktualny współczynnik zoom
+        scale = win.zoom
+        # przeskalowanie obrazu
+        pil_img = pil_img.resize((int(w * scale), int(h * scale)), Image.LANCZOS)
+        # tworzy obiekt PhotoImage
+        photo = ImageTk.PhotoImage(pil_img)
+        # ustawia rozmiar canvasa i aktualizuje obraz
+        canvas.config(width=photo.width(), height=photo.height())
+        # przywiązanie obrazu do canvasa, by nie został usunięty z pamięci
+        canvas.photo = photo
+        # aktualizacja obrazu na canvasie
+        canvas.itemconfig(img_id, image=photo)
+        win.title(f"{title} {win.zoom*100:.0f}%")
+        canvas.pack()
+
+    def on_mousewheel(event):
+        # Zoom in/out
+        win.zoom *= 1.1 if event.delta > 0 else 1/1.1
+        update_image()
+
+    canvas.bind("<MouseWheel>", on_mousewheel)
+    win.bind("<FocusIn>", lambda e: setattr(globals_var, "current_window", win))
+    update_image()
+    # ----------------------------------------------------------
 
 def save_image():
     """Zapisuje sfocusowany obraz w wybranej przez użytkownika lokalizacji."""
