@@ -3,6 +3,8 @@ from pathlib import Path  # do pracy ze ścieżkami
 from tkinter import filedialog  # do okna wyboru pliku
 from tkinter import Toplevel, Canvas #do okna z obrazem
 from tkinter import messagebox # do błędów
+import tkinter as tk # do tablicy LUT
+from tkinter import ttk # do tablicy LUT
 from PIL import Image, ImageTk  # do konwersji obrazów do formatu Tkinter
 import numpy as np # do operacji na tablicach
 import globals_var  # zmienne globalne
@@ -114,7 +116,8 @@ def open_and_show_image():
         file_path_obj = Path(file_path)
         with open(file_path_obj, "rb") as f:
             file_bytes = np.asarray(bytearray(f.read()), dtype=np.uint8)
-            image = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
+            # wczyta obraz taki jaki jest albo monochromatyczny albo kolorowy
+            image = cv2.imdecode(file_bytes, cv2.IMREAD_UNCHANGED)
         if image is not None:
             # Dodaj ID do nazwy pliku
             stem, ext = file_path_obj.stem, file_path_obj.suffix
@@ -152,10 +155,16 @@ def generate_lut():
     a wartość będzie odpowiadała liczbie pikseli w obrazie o takiej wartości"""
     if globals_var.current_window in globals_var.opened_images:
         img_info = globals_var.opened_images[globals_var.current_window]
+        # Tworzymy nowe okno
+        okno = tk.Toplevel()
+        tit = f"{img_info["filename"]} tablica LUT"
+        okno.title(tit)
+
         image = img_info["image"]
         h, w = 200, 256 # rozmiar obrazka z LUT
 
         # Sprawdź, czy obraz jest monochromatyczny czy kolorowy
+        # print(f"Kształt obrazu: {image.shape}")
         if len(image.shape) == 2:
             # MONOCHROMATYCZNY
             lut = [0] * 256
@@ -165,21 +174,82 @@ def generate_lut():
                     val = image[y, x]
                     lut[val] += 1
             #print("LUT dla obrazu monochromatycznego:", lut)
-            # tworzenie obrazka tablicy LUT
-            # Normalizacja LUT do wysokości obrazka
-            max_val = max(lut)
-            if max_val == 0:
-                max_val = 1
-            norm_lut = [int(v / max_val * (h-1)) for v in lut]
+            # pokazanie tablicy LUT w oknie
+            """
+            # Tworzymy Treeview z jedną kolumną
+            tree = ttk.Treeview(okno, columns=("Wartość",), show="headings")
+            tree.heading("Wartość", text="Wartość")
+            tree.pack(padx=10, pady=10)
 
-            # Tworzymy czarny obraz (wysokość x szerokość)
-            hist_img = np.zeros((h, w), dtype=np.uint8)
+            # Wypełniamy tabelę
+            for element in lut:
+                tree.insert("", tk.END, values=(element,))
+            """
+            """
+            # Frame z przewijaniem
+            frame = tk.Frame(okno)
+            frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
-            # Rysujemy słupki
-            for x, val in enumerate(norm_lut):
-                cv2.line(hist_img, (x, h-1), (x, h-1-val), 255, 1)
-            return hist_img
-        
+            # Scrollbar
+            scrollbar = tk.Scrollbar(frame)
+            scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+            # Treeview
+            tree = ttk.Treeview(frame, columns=("Wartość",), show="headings", yscrollcommand=scrollbar.set)
+            tree.heading("Wartość", text="Wartość")
+            tree.column("Wartość", anchor=tk.CENTER, width=250)
+            tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+            scrollbar.config(command=tree.yview)
+
+            # Wypełnienie danymi
+            for i, element in enumerate(lut):
+                tree.insert("", tk.END, values=(element,))
+            """
+            """
+            frame = tk.Frame(okno)
+            frame.pack(padx=10, pady=10)
+
+            # Treeview z dwiema kolumnami
+            tree = ttk.Treeview(frame, columns=("Indeks", "Wartość"), show="headings", height=10)
+            tree.heading("Indeks", text="Poziom jasności")
+            tree.heading("Wartość", text="Wartość")
+            tree.column("Indeks", width=120)
+            tree.column("Wartość", width=120)
+            tree.pack()
+
+            # Funkcja aktualizująca widok
+            def aktualizuj(val):
+                tree.delete(*tree.get_children())
+                start = int(val)
+                for i in range(start, min(start + 10, 256)):
+                    tree.insert("", tk.END, values=(i, lut[i]))
+
+            # Suwak
+            suwak = tk.Scale(okno, from_=0, to=246, orient=tk.HORIZONTAL, command=aktualizuj, length=260)
+            suwak.pack(padx=10, pady=10)
+            suwak.set(0)
+            """
+            frame = tk.Frame(okno)
+            frame.pack(padx=10, pady=10, fill=tk.BOTH, expand=True)
+
+            # Scrollbar
+            scrollbar = ttk.Scrollbar(frame)
+            scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+            # Treeview z dwiema kolumnami
+            tree = ttk.Treeview(frame, columns=("Indeks", "Wartość"), show="headings", height=15, yscrollcommand=scrollbar.set)
+            tree.heading("Indeks", text="Poziom jasności")
+            tree.heading("Wartość", text="Wartość")
+            tree.column("Indeks", width=120)
+            tree.column("Wartość", width=120)
+            tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+            scrollbar.config(command=tree.yview)
+
+            # Wypełniamy tabelę
+            for i in range(256):
+                tree.insert("", tk.END, values=(i, lut[i]))
         elif len(image.shape) == 3 and image.shape[2] == 3:
             # KOLOROWY
             lut_b = [0] * 256
@@ -195,31 +265,17 @@ def generate_lut():
             # print("LUT dla kanału B:", lut_b)
             # print("LUT dla kanału G:", lut_g)
             # print("LUT dla kanału R:", lut_r)
-            # tworzenie obrazka tablicy LUT
-            max_val = max(max(lut_b), max(lut_g), max(lut_r))
-            if max_val == 0:
-                max_val = 1
-            norm_b = [int(v / max_val * (h-1)) for v in lut_b]
-            norm_g = [int(v / max_val * (h-1)) for v in lut_g]
-            norm_r = [int(v / max_val * (h-1)) for v in lut_r]
-
-            hist_img = np.zeros((h, w, 3), dtype=np.uint8)
-            for x in range(w):
-                # Blue
-                cv2.line(hist_img, (x, h-1), (x, h-1-norm_b[x]), (255,0,0), 1)
-                # Green
-                cv2.line(hist_img, (x, h-1), (x, h-1-norm_g[x]), (0,255,0), 1)
-                # Red
-                cv2.line(hist_img, (x, h-1), (x, h-1-norm_r[x]), (0,0,255), 1)
-            return hist_img
+            
         else:
+            okno.destroy()
             print("Nieobsługiwany format obrazu.")
     else:
+        okno.destroy()
         print("Brak aktywnego okna z obrazem.")
 
 def show_lut():
     """Generuje i wyświetla tablicę LUT dla aktualnie sfocusowanego obrazu."""
     lut_image = generate_lut()
-    if lut_image is not None:
-        title = globals_var.opened_images[globals_var.current_window]["filename"] + "_LUT"
-        show_image(lut_image, title)
+    # if lut_image is not None:
+    #     title = globals_var.opened_images[globals_var.current_window]["filename"] + "_LUT"
+    #     show_image(lut_image, title)
