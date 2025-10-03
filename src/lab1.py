@@ -155,16 +155,12 @@ def generate_lut():
     a wartość będzie odpowiadała liczbie pikseli w obrazie o takiej wartości"""
     if globals_var.current_window in globals_var.opened_images:
         img_info = globals_var.opened_images[globals_var.current_window]
-        # Tworzymy nowe okno
-        okno = tk.Toplevel()
         tit = f"{img_info["filename"]} tablica LUT"
-        okno.title(tit)
 
         image = img_info["image"]
         h, w = 200, 256 # rozmiar obrazka z LUT
 
         # Sprawdź, czy obraz jest monochromatyczny czy kolorowy
-        # print(f"Kształt obrazu: {image.shape}")
         if len(image.shape) == 2:
             # MONOCHROMATYCZNY
             lut = [0] * 256
@@ -173,66 +169,42 @@ def generate_lut():
                 for x in range(width):
                     val = image[y, x]
                     lut[val] += 1
-            #print("LUT dla obrazu monochromatycznego:", lut)
-            # pokazanie tablicy LUT w oknie
-            """
-            # Tworzymy Treeview z jedną kolumną
-            tree = ttk.Treeview(okno, columns=("Wartość",), show="headings")
-            tree.heading("Wartość", text="Wartość")
-            tree.pack(padx=10, pady=10)
+            result = {"color": False, "lut": lut, "title": tit}
 
-            # Wypełniamy tabelę
-            for element in lut:
-                tree.insert("", tk.END, values=(element,))
-            """
-            """
-            # Frame z przewijaniem
-            frame = tk.Frame(okno)
-            frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        elif len(image.shape) == 3 and image.shape[2] == 3:
+            # KOLOROWY
+            lut_b = [0] * 256
+            lut_g = [0] * 256
+            lut_r = [0] * 256
+            height, width, _ = image.shape
+            for y in range(height):
+                for x in range(width):
+                    b, g, r = image[y, x]
+                    lut_b[b] += 1
+                    lut_g[g] += 1
+                    lut_r[r] += 1
+            result = {"color": True, "lut": [lut_r, lut_g, lut_b], "title": tit}
 
-            # Scrollbar
-            scrollbar = tk.Scrollbar(frame)
-            scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        else:
+            messagebox.showerror("Błąd", "Nieobsługiwany format obrazu.")
+            return None
+        
+        return result
+    else:
+        messagebox.showerror("Błąd", "Brak aktywnego okna z obrazem.")
+        return None
 
-            # Treeview
-            tree = ttk.Treeview(frame, columns=("Wartość",), show="headings", yscrollcommand=scrollbar.set)
-            tree.heading("Wartość", text="Wartość")
-            tree.column("Wartość", anchor=tk.CENTER, width=250)
-            tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+def show_lut():
+    """Generuje i wyświetla tablicę LUT dla aktualnie sfocusowanego obrazu."""
+    lut = generate_lut()
+    if lut is not None: 
+        # Tworzymy nowe okno
+        okno = tk.Toplevel()
+        okno.title(lut["title"])
+        frame = tk.Frame(okno)
+        frame.pack(padx=10, pady=10, fill=tk.BOTH, expand=True)
 
-            scrollbar.config(command=tree.yview)
-
-            # Wypełnienie danymi
-            for i, element in enumerate(lut):
-                tree.insert("", tk.END, values=(element,))
-            """
-            """
-            frame = tk.Frame(okno)
-            frame.pack(padx=10, pady=10)
-
-            # Treeview z dwiema kolumnami
-            tree = ttk.Treeview(frame, columns=("Indeks", "Wartość"), show="headings", height=10)
-            tree.heading("Indeks", text="Poziom jasności")
-            tree.heading("Wartość", text="Wartość")
-            tree.column("Indeks", width=120)
-            tree.column("Wartość", width=120)
-            tree.pack()
-
-            # Funkcja aktualizująca widok
-            def aktualizuj(val):
-                tree.delete(*tree.get_children())
-                start = int(val)
-                for i in range(start, min(start + 10, 256)):
-                    tree.insert("", tk.END, values=(i, lut[i]))
-
-            # Suwak
-            suwak = tk.Scale(okno, from_=0, to=246, orient=tk.HORIZONTAL, command=aktualizuj, length=260)
-            suwak.pack(padx=10, pady=10)
-            suwak.set(0)
-            """
-            frame = tk.Frame(okno)
-            frame.pack(padx=10, pady=10, fill=tk.BOTH, expand=True)
-
+        if lut["color"]==False:
             # Scrollbar
             scrollbar = ttk.Scrollbar(frame)
             scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
@@ -249,33 +221,26 @@ def generate_lut():
 
             # Wypełniamy tabelę
             for i in range(256):
-                tree.insert("", tk.END, values=(i, lut[i]))
-        elif len(image.shape) == 3 and image.shape[2] == 3:
-            # KOLOROWY
-            lut_b = [0] * 256
-            lut_g = [0] * 256
-            lut_r = [0] * 256
-            height, width, _ = image.shape
-            for y in range(height):
-                for x in range(width):
-                    b, g, r = image[y, x]
-                    lut_b[b] += 1
-                    lut_g[g] += 1
-                    lut_r[r] += 1
-            # print("LUT dla kanału B:", lut_b)
-            # print("LUT dla kanału G:", lut_g)
-            # print("LUT dla kanału R:", lut_r)
-            
+                tree.insert("", tk.END, values=(i, lut["lut"][i]))
         else:
-            okno.destroy()
-            print("Nieobsługiwany format obrazu.")
-    else:
-        okno.destroy()
-        print("Brak aktywnego okna z obrazem.")
+            # Scrollbar
+            scrollbar = ttk.Scrollbar(frame)
+            scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
-def show_lut():
-    """Generuje i wyświetla tablicę LUT dla aktualnie sfocusowanego obrazu."""
-    lut_image = generate_lut()
-    # if lut_image is not None:
-    #     title = globals_var.opened_images[globals_var.current_window]["filename"] + "_LUT"
-    #     show_image(lut_image, title)
+            # Treeview z czterema kolumnami
+            tree = ttk.Treeview(frame, columns=("Indeks", "R", "G", "B"), show="headings", height=15, yscrollcommand=scrollbar.set)
+            tree.heading("Indeks", text="Poziom jasności")
+            tree.heading("R", text="Red")
+            tree.heading("G", text="Green")
+            tree.heading("B", text="Blue")
+            tree.column("Indeks", width=100)
+            tree.column("R", width=80)
+            tree.column("G", width=80)
+            tree.column("B", width=80)
+            tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+            scrollbar.config(command=tree.yview)
+
+            # Wypełniamy tabelę
+            for i in range(256):
+                tree.insert("", tk.END, values=(i, lut["lut"][0][i], lut["lut"][1][i], lut["lut"][2][i]))
