@@ -145,3 +145,81 @@ def duplicate_focused_image():
 #         else:
 #             print("Brak aktywnego okna z obrazem.")
 #         time.sleep(5)  # co 5 sekund
+
+def generate_lut():
+    """generuje LUT na podstawie stworzonej jednowymiarowej tablicy.
+    tablica będzie miała indeks związany z poziomem jasności,
+    a wartość będzie odpowiadała liczbie pikseli w obrazie o takiej wartości"""
+    if globals_var.current_window in globals_var.opened_images:
+        img_info = globals_var.opened_images[globals_var.current_window]
+        image = img_info["image"]
+        h, w = 200, 256 # rozmiar obrazka z LUT
+
+        # Sprawdź, czy obraz jest monochromatyczny czy kolorowy
+        if len(image.shape) == 2:
+            # MONOCHROMATYCZNY
+            lut = [0] * 256
+            height, width = image.shape
+            for y in range(height):
+                for x in range(width):
+                    val = image[y, x]
+                    lut[val] += 1
+            #print("LUT dla obrazu monochromatycznego:", lut)
+            # tworzenie obrazka tablicy LUT
+            # Normalizacja LUT do wysokości obrazka
+            max_val = max(lut)
+            if max_val == 0:
+                max_val = 1
+            norm_lut = [int(v / max_val * (h-1)) for v in lut]
+
+            # Tworzymy czarny obraz (wysokość x szerokość)
+            hist_img = np.zeros((h, w), dtype=np.uint8)
+
+            # Rysujemy słupki
+            for x, val in enumerate(norm_lut):
+                cv2.line(hist_img, (x, h-1), (x, h-1-val), 255, 1)
+            return hist_img
+        
+        elif len(image.shape) == 3 and image.shape[2] == 3:
+            # KOLOROWY
+            lut_b = [0] * 256
+            lut_g = [0] * 256
+            lut_r = [0] * 256
+            height, width, _ = image.shape
+            for y in range(height):
+                for x in range(width):
+                    b, g, r = image[y, x]
+                    lut_b[b] += 1
+                    lut_g[g] += 1
+                    lut_r[r] += 1
+            # print("LUT dla kanału B:", lut_b)
+            # print("LUT dla kanału G:", lut_g)
+            # print("LUT dla kanału R:", lut_r)
+            # tworzenie obrazka tablicy LUT
+            max_val = max(max(lut_b), max(lut_g), max(lut_r))
+            if max_val == 0:
+                max_val = 1
+            norm_b = [int(v / max_val * (h-1)) for v in lut_b]
+            norm_g = [int(v / max_val * (h-1)) for v in lut_g]
+            norm_r = [int(v / max_val * (h-1)) for v in lut_r]
+
+            hist_img = np.zeros((h, w, 3), dtype=np.uint8)
+            for x in range(w):
+                # Blue
+                cv2.line(hist_img, (x, h-1), (x, h-1-norm_b[x]), (255,0,0), 1)
+                # Green
+                cv2.line(hist_img, (x, h-1), (x, h-1-norm_g[x]), (0,255,0), 1)
+                # Red
+                cv2.line(hist_img, (x, h-1), (x, h-1-norm_r[x]), (0,0,255), 1)
+            return hist_img
+        else:
+            print("Nieobsługiwany format obrazu.")
+    else:
+        print("Brak aktywnego okna z obrazem.")
+
+def show_lut():
+    """Generuje i wyświetla tablicę LUT dla aktualnie sfocusowanego obrazu."""
+    lut_image = generate_lut()
+    if lut_image is not None:
+        title = globals_var.opened_images[globals_var.current_window]["filename"] + "_LUT"
+        show_image(lut_image, title)
