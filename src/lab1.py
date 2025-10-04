@@ -280,7 +280,15 @@ def show_hist():
     pokazanie histogramu
     """
     lut = generate_lut()
-    #dla monochromatycznych
-    if lut["color"] == False:
-        #wzięcie jasności, co ma najwięcej pikseli
-        var_max = max()
+    #sprawdzamy czy wogóle jakiś obrazek jest
+    if lut is not None:
+        okno = tk.Toplevel()
+        okno.title("Okno dziecko")
+        okno.geometry("400x300") #szerokość 400 wysokość 300
+        #dla monochromatycznych
+        if lut["color"] == False:
+            #wzięcie jasności, co ma najwięcej pikseli
+            var_max = max(lut["lut"]) # do niej normowane wysokości słupków
+            # normowanie
+            norm = lut["lut"]
+            
