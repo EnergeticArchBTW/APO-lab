@@ -63,7 +63,7 @@ def show_image(image, title="Podgląd obrazu"):
         canvas.photo = photo
         # aktualizacja obrazu na canvasie
         canvas.itemconfig(img_id, image=photo)
-        win.title(f"{title} {win.zoom*100:.0f}%")
+        win.title(f"{title} {win.zoom*100:.0f}% " + ("Monochromatyczny" if len(image.shape) == 2 else "Kolorowy"))
         canvas.pack()
 
     def on_mousewheel(event):
@@ -152,7 +152,11 @@ def duplicate_focused_image():
 def generate_lut():
     """generuje LUT na podstawie stworzonej jednowymiarowej tablicy.
     tablica będzie miała indeks związany z poziomem jasności,
-    a wartość będzie odpowiadała liczbie pikseli w obrazie o takiej wartości"""
+    a wartość będzie odpowiadała liczbie pikseli w obrazie o takiej wartości
+    "color" czy kolorowy albo monochromatyczny
+    "lut" tablica lub tablice lut
+    "title" tytuł okna
+    """
     if globals_var.current_window in globals_var.opened_images:
         img_info = globals_var.opened_images[globals_var.current_window]
         tit = f"{img_info["filename"]} tablica LUT"
@@ -204,6 +208,30 @@ def show_lut():
         frame = tk.Frame(okno)
         frame.pack(padx=10, pady=10, fill=tk.BOTH, expand=True)
 
+        #----szybsze przewijanie o 5, 10, 15------
+        # Frame na przyciski nawigacji
+        nav_frame = tk.Frame(frame)
+        nav_frame.pack(side=tk.RIGHT, padx=5, fill=tk.Y)
+
+        # Funkcje do przesuwania
+        def scroll_up(rows):
+            current = tree.yview()[0]
+            tree.yview_moveto(max(0, current - rows/256))
+
+        def scroll_down(rows):
+            current = tree.yview()[0]
+            tree.yview_moveto(min(1, current + rows/256))
+
+        # Przyciski
+        ttk.Button(nav_frame, text="↑ 15", command=lambda: scroll_up(15), width=6).pack(pady=2)
+        ttk.Button(nav_frame, text="↑ 10", command=lambda: scroll_up(10), width=6).pack(pady=2)
+        ttk.Button(nav_frame, text="↑ 5", command=lambda: scroll_up(5), width=6).pack(pady=2)
+        ttk.Label(nav_frame, text="─────").pack(pady=5)
+        ttk.Button(nav_frame, text="↓ 5", command=lambda: scroll_down(5), width=6).pack(pady=2)
+        ttk.Button(nav_frame, text="↓ 10", command=lambda: scroll_down(10), width=6).pack(pady=2)
+        ttk.Button(nav_frame, text="↓ 15", command=lambda: scroll_down(15), width=6).pack(pady=2)
+        #----------
+
         if lut["color"]==False:
             # Scrollbar
             scrollbar = ttk.Scrollbar(frame)
@@ -218,6 +246,8 @@ def show_lut():
             tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
             scrollbar.config(command=tree.yview)
+
+            
 
             # Wypełniamy tabelę
             for i in range(256):
@@ -244,3 +274,13 @@ def show_lut():
             # Wypełniamy tabelę
             for i in range(256):
                 tree.insert("", tk.END, values=(i, lut["lut"][0][i], lut["lut"][1][i], lut["lut"][2][i]))
+
+def show_hist():
+    """
+    pokazanie histogramu
+    """
+    lut = generate_lut()
+    #dla monochromatycznych
+    if lut["color"] == False:
+        #wzięcie jasności, co ma najwięcej pikseli
+        var_max = max()
