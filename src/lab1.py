@@ -276,19 +276,79 @@ def show_lut():
                 tree.insert("", tk.END, values=(i, lut["lut"][0][i], lut["lut"][1][i], lut["lut"][2][i]))
 
 def show_hist():
-    """
-    pokazanie histogramu
-    """
+    """ pokazanie histogramu """
     lut = generate_lut()
     #sprawdzamy czy wogóle jakiś obrazek jest
     if lut is not None:
-        okno = tk.Toplevel()
-        okno.title("Okno dziecko")
-        okno.geometry("400x300") #szerokość 400 wysokość 300
+        #okno.geometry("450x350") #szerokość 450 wysokość 350
         #dla monochromatycznych
         if lut["color"] == False:
             #wzięcie jasności, co ma najwięcej pikseli
             var_max = max(lut["lut"]) # do niej normowane wysokości słupków
-            # normowanie
+            print(var_max)
+
+            # normowanie przez podzielenie
             norm = lut["lut"]
+
+            #running_count to licznik do mediany
+            mean = std = median_value = total_pixels = brightness_sum = running_count = 0
+            norm = [0] * len(lut["lut"])
+            # obliczenia tylko gdy nie ma samych zer
+            if var_max != 0:
+                norm = [int((val / var_max) * 300) for val in lut["lut"]]
+
+                #kumulowanie informacji
+                total_pixels = sum(lut["lut"])              #ilość pikseli w obrazie
+                median_pixel = total_pixels // 2            # połowa — do mediany
+
+                for level, count in enumerate(lut["lut"]):
+                    # brightness_sum to suma całkowitej jasności wszystkich pikseli w obrazie (suma jasności * ilość pikseli)
+                    brightness_sum += level * count
+
+                    # Szukanie mediany – kiedy licznik przekroczy połowę wszystkich pikseli
+                    running_count += count # dodawanie do licznika mediany
+                    # wynik mediany
+                    if median_value == 0 and running_count >= median_pixel:
+                        median_value = level
+
+                # Obliczenie średniej
+                mean = brightness_sum / total_pixels if total_pixels > 0 else 0
+
+                # Obliczenie odchylenia standardowego
+                variance_sum = sum(((level - mean) ** 2) * count for level, count in enumerate(lut["lut"]))
+                std = (variance_sum / total_pixels) ** 0.5 if total_pixels > 0 else 0
+
+            # Wyniki
+            print(f"Średnia jasność: {mean:.2f}")
+            print(f"Odchylenie standardowe: {std:.2f}")
+            print(f"Mediana: {median_value}")
+            print(f"Liczba pikseli: {total_pixels}")
+
+            # pokaż dla sprawdzenia
+            print(norm)
+
+            #obliczanie grubości słupka (szerokość) / 256
+            bar_width = int(round(450 / 256))
+
+            # rysowanie (potrzebne norm, var_max, bar_width)
+            okno = tk.Toplevel()
+            okno.title("histogram")
+            canvas = tk.Canvas(okno, width=580, height=360, bg='white')
+            canvas.pack()
             
+            # rysowanie słupków (przesunięte o 50 w prawo i w górę by zrobić miejsce na opisy)
+            for i, height in enumerate(norm):
+                x = 50 + i * bar_width
+                canvas.create_rectangle(x, 300 - height, x + bar_width, 300, fill='black', outline='')
+            
+            # tekst z maksymalną wartością (góra po lewej)
+            canvas.create_text(25, 0, text=str(var_max), anchor='n')
+            
+            # tekst "0" na dole po lewej
+            canvas.create_text(25, 300, text='0', anchor='s')
+            
+            # tekst "0" na dole histogramu po lewej stronie
+            canvas.create_text(50, 320, text='0', anchor='n')
+            
+            # tekst "255" na dole histogramu po prawej stronie
+            canvas.create_text(50 + 255 * bar_width, 320, text='255', anchor='n')
