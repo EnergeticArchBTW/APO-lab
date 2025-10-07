@@ -275,49 +275,62 @@ def show_lut():
             for i in range(256):
                 tree.insert("", tk.END, values=(i, lut["lut"][0][i], lut["lut"][1][i], lut["lut"][2][i]))
 
-def show_hist():
-    """ pokazanie histogramu """
+def cal_mono_hist(mono_lut):
+    """ oblicza monochromatyczny histogram (albo jeden kanał kolorowy) i zwraca norm, var_max, mean, std, median_value, total_pixels.
+     mono_lut to już jest sama tablica "lut", dla której wiadomo, że ma tylko jedną listę """
+    var_max = max(mono_lut) # do niej normowane wysokości słupków
+    print(var_max)
+
+    # normowanie przez podzielenie
+    norm = mono_lut
+
+    #running_count to licznik do mediany
+    mean = std = median_value = total_pixels = brightness_sum = running_count = 0
+    norm = [0] * len(mono_lut)
+    # obliczenia tylko gdy nie ma samych zer
+    if var_max != 0:
+        #zakładam, że 230 pikseli to maksymalna wysokość słupka
+        norm = [int((val / var_max) * 230) for val in mono_lut]
+
+        #kumulowanie informacji
+        total_pixels = sum(mono_lut)              #ilość pikseli w obrazie
+        median_pixel = total_pixels // 2            # połowa — do mediany
+
+        for level, count in enumerate(mono_lut):
+            # brightness_sum to suma całkowitej jasności wszystkich pikseli w obrazie (suma jasności * ilość pikseli)
+            brightness_sum += level * count
+
+            # Szukanie mediany – kiedy licznik przekroczy połowę wszystkich pikseli
+            running_count += count # dodawanie do licznika mediany
+            # wynik mediany
+            if median_value == 0 and running_count >= median_pixel:
+                median_value = level
+
+        # Obliczenie średniej
+        mean = brightness_sum / total_pixels if total_pixels > 0 else 0
+
+        # Obliczenie odchylenia standardowego
+        variance_sum = sum(((level - mean) ** 2) * count for level, count in enumerate(mono_lut))
+        std = (variance_sum / total_pixels) ** 0.5 if total_pixels > 0 else 0
+    
+    return norm, var_max, mean, std, median_value, total_pixels
+
+def cal_hist(okno):
+    """ obliczanie monochromatycznego/kolorowego histogramu i tworzenie pustego okna do rysowania histogramu"""
+    main_frame = tk.Frame(okno, bg='white')
+    main_frame.pack()
     lut = generate_lut()
     #sprawdzamy czy wogóle jakiś obrazek jest
     if lut is not None:
+
+        #obliczanie grubości słupka (szerokość) / 256
+        bar_width = int(round(450 / 256))
+
         #okno.geometry("450x350") #szerokość 450 wysokość 350
         #dla monochromatycznych
         if lut["color"] == False:
-            #wzięcie jasności, co ma najwięcej pikseli
-            var_max = max(lut["lut"]) # do niej normowane wysokości słupków
-            print(var_max)
 
-            # normowanie przez podzielenie
-            norm = lut["lut"]
-
-            #running_count to licznik do mediany
-            mean = std = median_value = total_pixels = brightness_sum = running_count = 0
-            norm = [0] * len(lut["lut"])
-            # obliczenia tylko gdy nie ma samych zer
-            if var_max != 0:
-                #zakładam, że 300 pikseli to maksymalna wysokość słupka
-                norm = [int((val / var_max) * 300) for val in lut["lut"]]
-
-                #kumulowanie informacji
-                total_pixels = sum(lut["lut"])              #ilość pikseli w obrazie
-                median_pixel = total_pixels // 2            # połowa — do mediany
-
-                for level, count in enumerate(lut["lut"]):
-                    # brightness_sum to suma całkowitej jasności wszystkich pikseli w obrazie (suma jasności * ilość pikseli)
-                    brightness_sum += level * count
-
-                    # Szukanie mediany – kiedy licznik przekroczy połowę wszystkich pikseli
-                    running_count += count # dodawanie do licznika mediany
-                    # wynik mediany
-                    if median_value == 0 and running_count >= median_pixel:
-                        median_value = level
-
-                # Obliczenie średniej
-                mean = brightness_sum / total_pixels if total_pixels > 0 else 0
-
-                # Obliczenie odchylenia standardowego
-                variance_sum = sum(((level - mean) ** 2) * count for level, count in enumerate(lut["lut"]))
-                std = (variance_sum / total_pixels) ** 0.5 if total_pixels > 0 else 0
+            norm, var_max, mean, std, median_value, total_pixels = cal_mono_hist(lut["lut"])
 
             # Wyniki
             print(f"Średnia jasność: {mean:.2f}")
@@ -328,37 +341,83 @@ def show_hist():
             # pokaż dla sprawdzenia
             print(norm)
 
-            #obliczanie grubości słupka (szerokość) / 256
-            bar_width = int(round(450 / 256))
+            #zwrócenie danych potrzebnych dla show_hist()
+            data = {"main_frame": main_frame, "norm": norm, "var_max": var_max, "bar_width": bar_width,
+                    "mean": mean, "std": std, "median_value": median_value, "total_pixels": total_pixels,
+                    "color": "black"}
+            show_hist(data)
+        
+        else:
+            # RED
+            norm_r, var_max_r, mean_r, std_r, median_value_r, total_pixels_r = cal_mono_hist(lut["lut"][0])
+            data = {"main_frame": main_frame, "norm": norm_r, "var_max": var_max_r, "bar_width": bar_width,
+                    "mean": mean_r, "std": std_r, "median_value": median_value_r, "total_pixels": total_pixels_r,
+                    "color": "red"}
+            show_hist(data)
 
-            # rysowanie (potrzebne norm, var_max, bar_width, mean, std, median_value, total_pixels)
-            okno = tk.Toplevel()
-            okno.title("histogram")
-            canvas = tk.Canvas(okno, width=570, height=360, bg='white')
-            canvas.pack()
-            
-            # rysowanie słupków (przesunięte o 50 w prawo i w górę by zrobić miejsce na opisy)
-            for i, height in enumerate(norm):
-                x = 50 + i * bar_width
-                canvas.create_rectangle(x - 19, 305 - height, x + bar_width - 19, 305, fill='black', outline='')
-            
-            # tekst z maksymalną wartością (góra po lewej)
-            canvas.create_text(35 - 19, 3, text=str(var_max), anchor='n')
-            
-            # tekst "0" na dole po lewej
-            canvas.create_text(45 - 19, 305, text='0', anchor='s')
-            
-            # tekst "0" na dole histogramu po lewej stronie
-            canvas.create_text(51 - 19, 305, text='0', anchor='n')
-            
-            # tekst "255" na dole histogramu po prawej stronie
-            canvas.create_text(50 - 19 + 255 * bar_width, 305, text='255', anchor='n')
+            #GREEN
+            norm_g, var_max_g, mean_g, std_g, median_value_g, total_pixels_g = cal_mono_hist(lut["lut"][1])
+            data = {"main_frame": main_frame, "norm": norm_g, "var_max": var_max_g, "bar_width": bar_width,
+                    "mean": mean_g, "std": std_g, "median_value": median_value_g, "total_pixels": total_pixels_g,
+                    "color": "green"}
+            show_hist(data)
 
-            # średnia jasność
-            canvas.create_text(80, 330, text=f"Średnia jasność: {mean:.2f}", anchor='n')
-            # odchylenie standardowe
-            canvas.create_text(240, 330, text=f"Odchylenie standardowe: {std:.2f}", anchor='n')
-            # mediana
-            canvas.create_text(380, 330, text=f"Mediana: {median_value}", anchor='n')
-            # liczba pikseli
-            canvas.create_text(490, 330, text=f"Liczba pikseli: {total_pixels}", anchor='n')
+            #BLUE
+            norm_b, var_max_b, mean_b, std_b, median_value_b, total_pixels_b = cal_mono_hist(lut["lut"][2])
+            data = {"main_frame": main_frame, "norm": norm_b, "var_max": var_max_b, "bar_width": bar_width,
+                    "mean": mean_b, "std": std_b, "median_value": median_value_b, "total_pixels": total_pixels_b,
+                    "color": "blue"}
+            show_hist(data)
+
+def show_hist(data):
+    """ Rysuje histogram w oknie.
+    funkcja przyjmuje main_frame, norm, var_max, bar_width, mean, std, median_value, total_pixels, color (kolor histogramu) """
+
+    # canvas = tk.Canvas(okno, width=570, height=580, bg='white')
+    # canvas.pack()
+
+    # Utwórz osobny Canvas dla każdego histogramu
+    canvas = tk.Canvas(data["main_frame"], width=570, height=290, bg='white')
+    canvas.pack()  # automatycznie układa pod spodem
+    # ramka pokazująca obszar histogramu
+    canvas.create_rectangle(0, 0, 570, 290, outline='lightgray', width=1)
+            
+    # rysowanie słupków (przesunięte o 50 w prawo i w górę by zrobić miejsce na opisy)
+    for i, height in enumerate(data["norm"]):
+        x = 50 + i * data["bar_width"]
+        canvas.create_rectangle(x - 19, 305 - height -70, x + data["bar_width"] - 19, 305 - 70, fill=data["color"], outline='')
+            
+    # tekst z maksymalną wartością (góra po lewej)
+    canvas.create_text(35 - 19, 3, text=str(data["var_max"]), anchor='n')
+            
+    # tekst "0" na dole po lewej
+    canvas.create_text(45 - 19, 235, text='0', anchor='s')
+            
+    # tekst "0" na dole histogramu po lewej stronie
+    canvas.create_text(51 - 19, 235, text='0', anchor='n')
+            
+    # tekst "255" na dole histogramu po prawej stronie
+    canvas.create_text(50 - 19 + 255 * data["bar_width"], 235, text='255', anchor='n')
+
+    # średnia jasność
+    canvas.create_text(80, 260, text=f"Średnia jasność: {data["mean"]:.2f}", anchor='n')
+    # odchylenie standardowe
+    canvas.create_text(240, 260, text=f"Odchylenie standardowe: {data["std"]:.2f}", anchor='n')
+    # mediana
+    canvas.create_text(380, 260, text=f"Mediana: {data["median_value"]}", anchor='n')
+    # liczba pikseli
+    canvas.create_text(490, 260, text=f"Liczba pikseli: {data["total_pixels"]}", anchor='n')
+
+def cal_and_show_hist():
+    """ oblicza i pokazuje cały histogram dla monochromatycznych i kolrowych obrazów
+    (najpierw sprawdza, czy jakiś obrazek jest sfocusowany)"""
+    #sprawdzamy czy wogóle jakiś obrazek jest
+    if globals_var.current_window in globals_var.opened_images:
+        okno = tk.Toplevel()
+        img_info = globals_var.opened_images[globals_var.current_window]
+        filename = img_info["filename"]
+        kolor = "Kolorowy" if len(img_info["image"].shape) == 3 and img_info["image"].shape[2] == 3 else "Monochromatyczny"
+        okno.title(f"{filename} histogram {kolor}")
+        cal_hist(okno)
+    else:
+        messagebox.showerror("Błąd", "Brak aktywnego okna z obrazem.")
