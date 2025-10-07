@@ -295,6 +295,7 @@ def show_hist():
             norm = [0] * len(lut["lut"])
             # obliczenia tylko gdy nie ma samych zer
             if var_max != 0:
+                #zakładam, że 300 pikseli to maksymalna wysokość słupka
                 norm = [int((val / var_max) * 300) for val in lut["lut"]]
 
                 #kumulowanie informacji
@@ -330,25 +331,34 @@ def show_hist():
             #obliczanie grubości słupka (szerokość) / 256
             bar_width = int(round(450 / 256))
 
-            # rysowanie (potrzebne norm, var_max, bar_width)
+            # rysowanie (potrzebne norm, var_max, bar_width, mean, std, median_value, total_pixels)
             okno = tk.Toplevel()
             okno.title("histogram")
-            canvas = tk.Canvas(okno, width=580, height=360, bg='white')
+            canvas = tk.Canvas(okno, width=570, height=360, bg='white')
             canvas.pack()
             
             # rysowanie słupków (przesunięte o 50 w prawo i w górę by zrobić miejsce na opisy)
             for i, height in enumerate(norm):
                 x = 50 + i * bar_width
-                canvas.create_rectangle(x, 300 - height, x + bar_width, 300, fill='black', outline='')
+                canvas.create_rectangle(x - 19, 305 - height, x + bar_width - 19, 305, fill='black', outline='')
             
             # tekst z maksymalną wartością (góra po lewej)
-            canvas.create_text(25, 0, text=str(var_max), anchor='n')
+            canvas.create_text(35 - 19, 3, text=str(var_max), anchor='n')
             
             # tekst "0" na dole po lewej
-            canvas.create_text(25, 300, text='0', anchor='s')
+            canvas.create_text(45 - 19, 305, text='0', anchor='s')
             
             # tekst "0" na dole histogramu po lewej stronie
-            canvas.create_text(50, 320, text='0', anchor='n')
+            canvas.create_text(51 - 19, 305, text='0', anchor='n')
             
             # tekst "255" na dole histogramu po prawej stronie
-            canvas.create_text(50 + 255 * bar_width, 320, text='255', anchor='n')
+            canvas.create_text(50 - 19 + 255 * bar_width, 305, text='255', anchor='n')
+
+            # średnia jasność
+            canvas.create_text(80, 330, text=f"Średnia jasność: {mean:.2f}", anchor='n')
+            # odchylenie standardowe
+            canvas.create_text(240, 330, text=f"Odchylenie standardowe: {std:.2f}", anchor='n')
+            # mediana
+            canvas.create_text(380, 330, text=f"Mediana: {median_value}", anchor='n')
+            # liczba pikseli
+            canvas.create_text(490, 330, text=f"Liczba pikseli: {total_pixels}", anchor='n')
