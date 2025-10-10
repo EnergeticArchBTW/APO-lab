@@ -486,5 +486,80 @@ def calandshow_without_supersaturation_hist():
     title = f"{img_info["filename"]}_without_supersaturation{Path(img_info["filename"]).suffix}"
     show_image(image_stretched, title=title)
 
+def cal_with_supersaturation5_hist(image, lut):
+    """ liniowe rozciągnięcie histogramu z 5% przesyceniem (liczenie dla jednego kanału)"""
+    
+    # oblicz całkowitą liczbę pikseli
+    total_pixels = image.shape[0] * image.shape[1]
+    
+    # oblicz próg (5% pikseli)
+    threshold = int(total_pixels * 0.05)
+    
+    # znajdź min_val: pomijamy pierwsze 5% pikseli
+    cumsum = 0
+    min_val = 0
+    for i in range(256):
+        cumsum += lut[i]
+        if cumsum >= threshold:
+            min_val = i
+            break
+    
+    # znajdź max_val: pomijamy ostatnie 5% pikseli
+    cumsum = 0
+    max_val = 255
+    for i in range(255, -1, -1):
+        cumsum += lut[i]
+        if cumsum >= threshold:
+            max_val = i
+            break
+    
+    print(f"min_val = {min_val}, max_val = {max_val}")
+    
+    Lmin = 0
+    Lmax = 255
+    hr = np.zeros(256, dtype=np.uint8)
+    
+    # obsługa przypadku min == max
+    if min_val == max_val:
+        hr[min_val] = 255
+        return hr[image]
+    
+    # obliczanie tablicy przekształceń (dokładnie jak w wersji bez przesycenia)
+    for Z in range(256):
+        if Z < min_val:
+            hr[Z] = Lmin
+        elif Z > max_val:
+            hr[Z] = Lmax
+        else:
+            hr[Z] = round(((Z - min_val) * (Lmax - Lmin)) / (max_val - min_val) + Lmin)
+    
+    image_stretched = hr[image]
+    return image_stretched
+
+
 def calandshow_with_supersaturation5_hist():
-    """ liniowe rozciągnięcie histogramu z 5% przesyceniem i pokazanie obrazu """
+    """ liniowe rozciągnięcie histogramu z 5% przesyceniem i pokazanie obrazu"""
+    image_stretched = None
+    img_info = globals_var.opened_images[globals_var.current_window]
+    image = img_info["image"]
+    lut = generate_lut()
+    
+    if lut is not None:
+        lut_values = lut["lut"]
+    else:
+        messagebox.showerror("Błąd", "Brak aktywnego okna z obrazem lub nieobsługiwany obraz.")
+        return
+    
+    # sprawdzamy czy monochromatyczny
+    if lut["color"] == False:
+        image_stretched = cal_with_supersaturation5_hist(image, lut_values)
+    else:
+        # dzielenie obrazu kolorowego na kanały
+        b, g, r = cv2.split(image)
+        r_stretched = cal_with_supersaturation5_hist(r, lut_values[0])
+        g_stretched = cal_with_supersaturation5_hist(g, lut_values[1])
+        b_stretched = cal_with_supersaturation5_hist(b, lut_values[2])
+        image_stretched = np.dstack((b_stretched, g_stretched, r_stretched))
+    
+    title = f"{img_info['filename']}_with_supersaturation5{Path(img_info['filename']).suffix}"
+    show_image(image_stretched, title=title)
