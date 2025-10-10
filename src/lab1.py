@@ -175,7 +175,8 @@ def generate_lut():
                     lut[val] += 1
             result = {"color": False, "lut": lut, "title": tit}
 
-        elif len(image.shape) == 3 and image.shape[2] == 3:
+        elif (len(image.shape) == 2 or (len(image.shape) == 3 and image.shape[2] in [3, 4])):
+            """ poprzedni warunek nie działał dla .png len(image.shape) == 3 and image.shape[2] == 3"""
             # KOLOROWY
             lut_b = [0] * 256
             lut_g = [0] * 256
@@ -183,7 +184,7 @@ def generate_lut():
             height, width, _ = image.shape
             for y in range(height):
                 for x in range(width):
-                    b, g, r = image[y, x]
+                    b, g, r = image[y, x][:3]
                     lut_b[b] += 1
                     lut_g[g] += 1
                     lut_r[r] += 1
@@ -421,3 +422,69 @@ def cal_and_show_hist():
         cal_hist(okno)
     else:
         messagebox.showerror("Błąd", "Brak aktywnego okna z obrazem.")
+
+def cal_without_supersaturation_hist(image, lut):
+    """ liniowe rozciągnięcie histogramu bez przesycenia (liczenie dla jednego kanału)"""
+    # znajdź pierwszy i ostatni niepusty słupek histogramu
+    # min_val to pierwsza niezerowa wartość w lut
+    # max_val to ostatnia niezerowa wartość w lut
+    min_val = next(i for i, v in enumerate(lut) if v > 0)
+    max_val = max(i for i, v in enumerate(lut) if v > 0)
+
+    print(f"min_val = {min_val}, max_val = {max_val}")
+
+    Lmin = 0
+    Lmax = 255
+
+    hr = np.zeros(256, dtype=np.uint8)
+
+    # obsługa przypadku min == max (obraz jednorodny w tym kanale)
+    if min_val == max_val:
+        hr[min_val] = 255
+        return hr[image]
+    
+    # obliczanie tablicy przekształceń
+    for Z in range(256):
+        if Z < min_val:
+            hr[Z] = Lmin
+        elif Z > max_val:
+            hr[Z] = Lmax
+        else:
+            hr[Z] = round(((Z - min_val) * (Lmax - Lmin)) / (max_val - min_val) + Lmin)
+
+    image_stretched = hr[image]
+    return image_stretched
+
+def calandshow_without_supersaturation_hist():
+    """ liniowe rozciągnięcie histogramu bez przesycenia i pokazanie obrazu"""
+
+    image_stretched = None
+
+    img_info = globals_var.opened_images[globals_var.current_window]
+    image = img_info["image"]
+
+    lut = generate_lut()
+    if lut is not None:
+        lut_values = lut["lut"]
+    else:
+        messagebox.showerror("Błąd", "Brak aktywnego okna z obrazem lub nieobsługiwany obraz.")
+        return
+    
+    # sprawdzamy czy monochromatyczny
+    if lut["color"] == False:
+        image_stretched = cal_without_supersaturation_hist(image, lut_values)
+    
+    else:
+        #dzielenie obrazu kolorowego na kanały
+        b, g, r = cv2.split(image)
+        r_stretched = cal_without_supersaturation_hist(r, lut_values[0])
+        g_stretched = cal_without_supersaturation_hist(g, lut_values[1])
+        b_stretched = cal_without_supersaturation_hist(b, lut_values[2])
+
+        image_stretched = np.dstack((b_stretched, g_stretched, r_stretched))
+
+    title = f"{img_info["filename"]}_without_supersaturation{Path(img_info["filename"]).suffix}"
+    show_image(image_stretched, title=title)
+
+def calandshow_with_supersaturation5_hist():
+    """ liniowe rozciągnięcie histogramu z 5% przesyceniem i pokazanie obrazu """
