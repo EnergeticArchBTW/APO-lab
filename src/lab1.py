@@ -349,6 +349,7 @@ def cal_hist(okno):
             show_hist(data)
         
         else:
+            """
             # RED
             norm_r, var_max_r, mean_r, std_r, median_value_r, total_pixels_r = cal_mono_hist(lut["lut"][0])
             data = {"main_frame": main_frame, "norm": norm_r, "var_max": var_max_r, "bar_width": bar_width,
@@ -369,6 +370,23 @@ def cal_hist(okno):
                     "mean": mean_b, "std": std_b, "median_value": median_value_b, "total_pixels": total_pixels_b,
                     "color": "blue"}
             show_hist(data)
+            """ 
+            colors = ["red", "green", "blue"]
+
+            for i, color in enumerate(colors):
+                norm, var_max, mean, std, median_value, total_pixels = cal_mono_hist(lut["lut"][i])
+                data = {
+                    "main_frame": main_frame,
+                    "norm": norm,
+                    "var_max": var_max,
+                    "bar_width": bar_width,
+                    "mean": mean,
+                    "std": std,
+                    "median_value": median_value,
+                    "total_pixels": total_pixels,
+                    "color": color
+                }
+                show_hist(data)
 
 def show_hist(data):
     """ Rysuje histogram w oknie.
@@ -483,7 +501,8 @@ def calandshow_without_supersaturation_hist():
 
         image_stretched = np.dstack((b_stretched, g_stretched, r_stretched))
 
-    title = f"{img_info["filename"]}_without_supersaturation{Path(img_info["filename"]).suffix}"
+    stem, ext = Path(img_info["filename"]).stem, Path(img_info["filename"]).suffix
+    title = f"{stem}_without_supersaturation{ext}"
     show_image(image_stretched, title=title)
 
 def cal_with_supersaturation5_hist(image, lut):
@@ -561,5 +580,137 @@ def calandshow_with_supersaturation5_hist():
         b_stretched = cal_with_supersaturation5_hist(b, lut_values[2])
         image_stretched = np.dstack((b_stretched, g_stretched, r_stretched))
     
-    title = f"{img_info['filename']}_with_supersaturation5{Path(img_info['filename']).suffix}"
+    stem, ext = Path(img_info["filename"]).stem, Path(img_info["filename"]).suffix
+    title = f"{stem}_with_supersaturation5{ext}"
     show_image(image_stretched, title=title)
+
+def calhistogram_equalization(lut, image):
+    """ funkcja liczy wyrównanie histogramu dla jednego kanału (monochromatycznego lub jednego kanału kolorowego)
+    zwraca obraz po equalizacji"""
+    # KROK 2: Tworzenie histogramu skumulowanego
+    # Według wzoru rekurencyjnego z wykładu:
+    # H_skum[0] = H[0] (zaczepienie)
+    # H_skum[i] = H_skum[i-1] + H[i] (algorytm rekurencyjny)
+    
+    histogram_skumulowany = [0] * 256
+    
+    # Zaczepienie - pierwsza wartość
+    histogram_skumulowany[0] = lut[0]
+    
+    # Rekurencyjne dodawanie kolejnych wartości
+    for i in range(1, 256):
+        histogram_skumulowany[i] = histogram_skumulowany[i-1] + lut[i]
+    
+    # KROK 3: Obliczenie całkowitej liczby pikseli w obrazie
+    # (to jest wartość ostatniego elementu histogramu skumulowanego)
+    height, width = image.shape
+    total_pixels = height * width  # lub histogram_skumulowany[255]
+    
+    # KROK 4: Tworzenie tablicy przekodowań (LUT dla equlizacji)
+    # Według wzoru z wykładu:
+    # nowa_wartość = ((H_skum[i] - H_skum[0]) / (1 - H_skum[0]/total)) * L_max
+    # 
+    # Po uproszczeniu (dzieląc przez total_pixels):
+    # nowa_wartość = ((H_skum[i] - H_skum_min) / (total_pixels - H_skum_min)) * 255
+    #
+    # gdzie H_skum_min to pierwsza niezerowa wartość w histogramie skumulowanym
+    
+    # Znajdź pierwszą niezerową wartość w histogramie skumulowanym
+    h_skum_min = histogram_skumulowany[0]
+    for val in histogram_skumulowany:
+        if val > 0:
+            h_skum_min = val
+            break
+    
+    # Tablica przekodowań - mapuje starą wartość jasności na nową
+    lut_equalization = [0] * 256
+    
+    # Dla każdego poziomu jasności (0-255) obliczamy nową wartość
+    for i in range(256):
+        if lut[i] == 0:
+            # Jeśli dany poziom jasności nie występuje w obrazie, 
+            # mapujemy go proporcjonalnie
+            lut_equalization[i] = i
+        else:
+            # Wzór equalizacji z wykładu:
+            # Normalizujemy histogram skumulowany do zakresu 0-255
+            # numerator = licznik, denomnator = mianownik
+            numerator = histogram_skumulowany[i] - h_skum_min
+            denominator = total_pixels - h_skum_min
+            
+            if denominator > 0:
+                # Obliczamy nową wartość i zaokrąglamy do liczby całkowitej
+                nowa_wartosc = (numerator / denominator) * 255
+                lut_equalization[i] = int(round(nowa_wartosc))
+            else:
+                lut_equalization[i] = i
+    
+    # KROK 5: Przekodowanie obrazu zgodnie z tablicą LUT
+    # Tworzymy nowy obraz o tych samych wymiarach
+    equalized_image = image.copy()
+    
+    # Przechodzimy przez każdy piksel obrazu
+    # Algorytm: przeglądamy obraz wierszami (y), w każdym wierszu kolumnami (x)
+    for y in range(height):
+        for x in range(width):
+            # Pobieramy starą wartość piksela
+            old_value = image[y, x]
+            
+            # Przekodowujemy zgodnie z tablicą LUT
+            # nowa wartość = lut_equalization[stara wartość]
+            new_value = lut_equalization[old_value]
+            
+            # Zapisujemy nową wartość w obrazie wynikowym
+            equalized_image[y, x] = new_value
+    return equalized_image
+
+def histogram_equalization():
+    """
+    Selektywne wyrównanie histogramu przez equalizację.
+    
+    Algorytm według wykładu:
+    1. Generacja tablicy LUT (histogram) - liczba pikseli o każdej wartości jasności
+    2. Tworzenie histogramu skumulowanego (analog dystrybuanty)
+    3. Normalizacja przez podzielenie przez sumę wszystkich pikseli
+    4. Przekształcenie wartości według wzoru equlizacji
+    5. Utworzenie tablicy przekodowań (LUT przekształcenia)
+    6. Przekodowanie całego obrazu
+    """
+    
+    # Sprawdzenie czy jest aktywne okno z obrazem
+    if globals_var.current_window not in globals_var.opened_images:
+        messagebox.showerror("Błąd", "Brak aktywnego okna z obrazem.")
+        return
+    
+    # Pobranie informacji o obrazie
+    img_info = globals_var.opened_images[globals_var.current_window]
+    image = img_info["image"]
+    
+    # KROK 1: Generacja tablicy LUT (histogram)
+    lut_data = generate_lut()
+    """
+    if lut_data is None or lut_data["color"]:
+        messagebox.showerror("Błąd", "Nie udało się wygenerować LUT. Sprawdź czy obraz jest kolorowy.")
+        return
+    """
+    
+    # Pobieramy tablicę lut z wygenerowanych danych
+    lut = lut_data["lut"]  # tablica 256 elementów: histogram[i] = liczba pikseli o wartości i
+    
+    if not lut_data["color"]:
+        equalized_image = calhistogram_equalization(lut, image)
+    else:
+        b, g, r = cv2.split(image)
+        r_eq = calhistogram_equalization(lut[0], r)
+        g_eq = calhistogram_equalization(lut[1], g)
+        b_eq = calhistogram_equalization(lut[2], b)
+        equalized_image = np.dstack((b_eq, g_eq, r_eq))
+    
+    # KROK 6: Wyświetlenie wyrównanego obrazu
+    # Konwersja z odcieni szarości (1 kanał) do BGR (3 kanały) dla show_image
+    #equalized_image_bgr = cv2.cvtColor(equalized_image, cv2.COLOR_GRAY2BGR)
+    
+    # Wyświetlenie wyniku
+    stem, ext = Path(img_info["filename"]).stem, Path(img_info["filename"]).suffix
+    title = f"{stem}_eq{ext}"
+    show_image(equalized_image, title)
