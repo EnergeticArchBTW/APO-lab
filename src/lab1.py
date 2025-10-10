@@ -714,3 +714,26 @@ def histogram_equalization():
     stem, ext = Path(img_info["filename"]).stem, Path(img_info["filename"]).suffix
     title = f"{stem}_eq{ext}"
     show_image(equalized_image, title)
+
+def negation():
+    """Negacja - wersja zoptymalizowana bez pętli."""
+    
+    if globals_var.current_window not in globals_var.opened_images:
+        messagebox.showerror("Błąd", "Brak aktywnego okna z obrazem.")
+        return
+    
+    img_info = globals_var.opened_images[globals_var.current_window]
+    image = img_info["image"]
+    
+    if len(image.shape) != 2:
+        messagebox.showerror("Błąd", "Funkcja działa tylko dla obrazów monochromatycznych.")
+        return
+    
+    # Negacja całej tablicy naraz
+    negated_image = 255 - image
+    
+    # Wyświetlenie
+    #negated_image_bgr = cv2.cvtColor(negated_image, cv2.COLOR_GRAY2BGR)
+    stem, ext = Path(img_info["filename"]).stem, Path(img_info["filename"]).suffix
+    title = f"{stem}_negation{ext}"
+    show_image(negated_image, title)
