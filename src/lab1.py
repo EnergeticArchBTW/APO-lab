@@ -840,3 +840,123 @@ def perform_gray_reduction(image, levels):
     result = lut[image]
     
     return result
+
+def binary_threshold():
+    """Progowanie binarne z progiem wskazywanym przez użytkownika."""
+    if globals_var.current_window not in globals_var.opened_images:
+        messagebox.showerror("Błąd", "Brak aktywnego okna z obrazem.")
+        return
+    
+    img_info = globals_var.opened_images[globals_var.current_window]
+    image = img_info["image"]
+    
+    # Sprawdź czy obraz jest monochromatyczny
+    if len(image.shape) != 2:
+        messagebox.showerror("Błąd", "Operacja działa tylko na obrazach monochromatycznych.")
+        return
+    
+    # Okno dialogowe z histogramem
+    dialog = Toplevel()
+    dialog.title("Progowanie binarne")
+    dialog.geometry("600x520")
+    
+    # ========== TUTAJ WYWOŁUJĘ HISTOGRAM ==========
+    # Tworzymy ramkę na histogram (to samo co main_frame w cal_hist)
+    hist_frame = tk.Frame(dialog, bg='white')
+    hist_frame.pack(pady=10)
+    
+    # Generujemy LUT i rysujemy histogram
+    lut = generate_lut()
+    if lut is not None and lut["color"] == False:
+        bar_width = int(round(450 / 256))
+        norm, var_max, mean, std, median_value, total_pixels = cal_mono_hist(lut["lut"])
+        
+        data = {
+            "main_frame": hist_frame,
+            "norm": norm,
+            "var_max": var_max,
+            "bar_width": bar_width,
+            "mean": mean,
+            "std": std,
+            "median_value": median_value,
+            "total_pixels": total_pixels,
+            "color": "black"
+        }
+        show_hist(data)
+    # ================================================
+    
+    # Ramka na kontrolki
+    control_frame = tk.Frame(dialog)
+    control_frame.pack(pady=10)
+    
+    tk.Label(control_frame, text="Wartość progu (0-255):").pack(pady=5)
+    
+    entry = tk.Entry(control_frame)
+    entry.pack(pady=5)
+    entry.insert(0, "128")  # wartość domyślna
+    
+    # Dodanie suwaka
+    def update_entry_from_slider(value):
+        entry.delete(0, tk.END)
+        entry.insert(0, str(int(float(value))))
+    
+    slider = tk.Scale(
+        control_frame,
+        from_=0,
+        to=255,
+        orient=tk.HORIZONTAL,
+        length=400,
+        command=update_entry_from_slider
+    )
+    slider.set(128)  # wartość domyślna
+    slider.pack(pady=5)
+    
+    def apply_threshold():
+        try:
+            threshold_value = int(entry.get())
+            if threshold_value < 0 or threshold_value > 255:
+                messagebox.showerror("Błąd", "Wartość progu musi być z zakresu 0-255.")
+                return
+            
+            dialog.destroy()
+            
+            # Wykonaj progowanie binarne
+            result_image = perform_binary_threshold(image, threshold_value)
+            
+            # Wyświetl wynik
+            stem, ext = Path(img_info["filename"]).stem, Path(img_info["filename"]).suffix
+            title = f"{stem}_binarythreshold{threshold_value}{ext}"
+            show_image(result_image, title)
+            
+        except ValueError:
+            messagebox.showerror("Błąd", "Podaj poprawną liczbę całkowitą.")
+    
+    tk.Button(control_frame, text="Zastosuj", command=apply_threshold).pack(pady=10)
+    tk.Button(control_frame, text="Anuluj", command=dialog.destroy).pack()
+
+
+def perform_binary_threshold(image, threshold):
+    """
+    Wykonuje progowanie binarne obrazu.
+    
+    Args:
+        image: obraz wejściowy (monochromatyczny)
+        threshold: wartość progu (0-255)
+    
+    Returns:
+        obraz binarny (wartości 0 lub 255)
+    """
+    # Tworzenie tablicy LUT
+    lut = np.zeros(256, dtype=np.uint8)
+    
+    # Wypełnij tablicę LUT zgodnie z progowaniem binarnym
+    for i in range(256):
+        if i >= threshold:
+            lut[i] = 255  # biały
+        else:
+            lut[i] = 0    # czarny
+    
+    # Zastosuj LUT do obrazu
+    result = lut[image]
+    
+    return result
