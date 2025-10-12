@@ -737,3 +737,88 @@ def negation():
     stem, ext = Path(img_info["filename"]).stem, Path(img_info["filename"]).suffix
     title = f"{stem}_negation{ext}"
     show_image(negated_image, title)
+
+def reduce_gray_levels():
+    """Redukcja poziomów szarości przez powtórną kwantyzację."""
+    if globals_var.current_window not in globals_var.opened_images:
+        messagebox.showerror("Błąd", "Brak aktywnego okna z obrazem.")
+        return
+    
+    img_info = globals_var.opened_images[globals_var.current_window]
+    image = img_info["image"]
+    
+    # Sprawdź czy obraz jest monochromatyczny
+    if len(image.shape) != 2:
+        messagebox.showerror("Błąd", "Operacja działa tylko na obrazach monochromatycznych.")
+        return
+    
+    # Okno dialogowe do wprowadzenia liczby poziomów
+    dialog = Toplevel()
+    dialog.title("Redukcja poziomów szarości")
+    dialog.geometry("320x150")
+    
+    tk.Label(dialog, text="Podaj liczbę poziomów szarości (2-256):").pack(pady=10)
+    
+    entry = tk.Entry(dialog)
+    entry.pack(pady=5)
+    entry.insert(0, "16")  # wartość domyślna
+    
+    def apply_reduction():
+        try:
+            levels = int(entry.get())
+            if levels < 2 or levels > 256:
+                messagebox.showerror("Błąd", "Liczba poziomów musi być z zakresu 2-256.")
+                return
+            
+            dialog.destroy()
+            
+            # Wykonaj redukcję poziomów szarości
+            result_image = perform_gray_reduction(image, levels)
+            
+            # Wyświetl wynik
+            stem, ext = Path(img_info["filename"]).stem, Path(img_info["filename"]).suffix
+            title = f"{stem}_reduction{levels}{ext}"
+            show_image(result_image, title)
+            
+        except ValueError:
+            messagebox.showerror("Błąd", "Podaj poprawną liczbę całkowitą.")
+    
+    tk.Button(dialog, text="Zastosuj", command=apply_reduction).pack(pady=10)
+    tk.Button(dialog, text="Anuluj", command=dialog.destroy).pack()
+
+def perform_gray_reduction(image, levels):
+    """
+    Wykonuje redukcję poziomów szarości przez powtórną kwantyzację - wersja z LUT.
+    
+    Args:
+        image: obraz wejściowy (monochromatyczny)
+        levels: liczba poziomów szarości w obrazie wynikowym (2-256)
+    
+    Returns:
+        obraz z zredukowaną liczbą poziomów szarości
+    """
+    # Tworzenie tablicy LUT (lookup table)
+    lut = np.zeros(256, dtype=np.uint8)
+    
+    # Oblicz szerokość przedziału dla każdego poziomu
+    interval_width = 256.0 / levels
+    
+    # Wypełnij tablicę LUT
+    for i in range(256):
+        # Określ, do którego przedziału należy wartość i
+        interval_index = int(i / interval_width)
+        
+        # Zabezpieczenie przed przekroczeniem zakresu
+        if interval_index >= levels:
+            interval_index = levels - 1
+        
+        # Przypisz środkową wartość przedziału
+        new_value = int((interval_index + 0.5) * interval_width)
+        
+        # Zabezpieczenie przed przekroczeniem zakresu 0-255
+        lut[i] = min(255, max(0, new_value))
+    
+    # Zastosuj LUT do obrazu - znacznie szybsze niż pętle
+    result = lut[image]
+    
+    return result
