@@ -841,11 +841,12 @@ def perform_gray_reduction(image, levels):
     
     return result
 
-def binary_threshold():
-    """Progowanie binarne z progiem wskazywanym przez użytkownika."""
-    if globals_var.current_window not in globals_var.opened_images:
-        messagebox.showerror("Błąd", "Brak aktywnego okna z obrazem.")
-        return
+def threshold(dialog, title, function):
+    """kod pokazujący okienko do progowania. można ten kod użyć jako progowanie binarne lub z zachowaniem poziomów szarości
+    Args:
+        dialog: okno dialogowe
+        title: tytuł okna
+        function: funkcja, która się uruchamia po kliknięciu zastosuj"""
     
     img_info = globals_var.opened_images[globals_var.current_window]
     image = img_info["image"]
@@ -854,10 +855,8 @@ def binary_threshold():
     if len(image.shape) != 2:
         messagebox.showerror("Błąd", "Operacja działa tylko na obrazach monochromatycznych.")
         return
-    
-    # Okno dialogowe z histogramem
-    dialog = Toplevel()
-    dialog.title("Progowanie binarne")
+
+    dialog.title(title)
     dialog.geometry("600x520")
     
     # ========== TUTAJ WYWOŁUJĘ HISTOGRAM ==========
@@ -920,8 +919,8 @@ def binary_threshold():
             
             dialog.destroy()
             
-            # Wykonaj progowanie binarne
-            result_image = perform_binary_threshold(image, threshold_value)
+            # Wykonaj progowanie binarne/z zachowaniem szarości
+            result_image = function(image, threshold_value)
             
             # Wyświetl wynik
             stem, ext = Path(img_info["filename"]).stem, Path(img_info["filename"]).suffix
@@ -933,6 +932,24 @@ def binary_threshold():
     
     tk.Button(control_frame, text="Zastosuj", command=apply_threshold).pack(pady=10)
     tk.Button(control_frame, text="Anuluj", command=dialog.destroy).pack()
+
+def binary_threshold():
+    """Progowanie binarne z progiem wskazywanym przez użytkownika."""
+    if globals_var.current_window not in globals_var.opened_images:
+        messagebox.showerror("Błąd", "Brak aktywnego okna z obrazem.")
+        return
+    
+    img_info = globals_var.opened_images[globals_var.current_window]
+    image = img_info["image"]
+    
+    # Sprawdź czy obraz jest monochromatyczny
+    if len(image.shape) != 2:
+        messagebox.showerror("Błąd", "Operacja działa tylko na obrazach monochromatycznych.")
+        return
+    
+    # Okno dialogowe z histogramem
+    dialog = Toplevel()
+    threshold(dialog, "Progowanie binarne", perform_binary_threshold)
 
 
 def perform_binary_threshold(image, threshold):
