@@ -755,13 +755,31 @@ def reduce_gray_levels():
     # Okno dialogowe do wprowadzenia liczby poziomów
     dialog = Toplevel()
     dialog.title("Redukcja poziomów szarości")
-    dialog.geometry("320x150")
+    dialog.geometry("320x200")
     
     tk.Label(dialog, text="Podaj liczbę poziomów szarości (2-256):").pack(pady=10)
     
     entry = tk.Entry(dialog)
     entry.pack(pady=5)
     entry.insert(0, "16")  # wartość domyślna
+
+    # ================================================================
+    # Dodanie suwaka
+    def update_entry_from_slider(value):
+        entry.delete(0, tk.END)
+        entry.insert(0, str(int(float(value))))
+    
+    slider = tk.Scale(
+        dialog,
+        from_=2,
+        to=256,
+        orient=tk.HORIZONTAL,
+        length=250,
+        command=update_entry_from_slider
+    )
+    slider.set(16)  # wartość domyślna
+    slider.pack(pady=5)
+    # ================================================================
     
     def apply_reduction():
         try:
