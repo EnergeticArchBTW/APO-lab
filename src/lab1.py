@@ -854,6 +854,7 @@ def threshold(dialog, title, function):
     # Sprawdź czy obraz jest monochromatyczny
     if len(image.shape) != 2:
         messagebox.showerror("Błąd", "Operacja działa tylko na obrazach monochromatycznych.")
+        dialog.destroy()
         return
 
     dialog.title(title)
@@ -939,14 +940,6 @@ def binary_threshold():
         messagebox.showerror("Błąd", "Brak aktywnego okna z obrazem.")
         return
     
-    img_info = globals_var.opened_images[globals_var.current_window]
-    image = img_info["image"]
-    
-    # Sprawdź czy obraz jest monochromatyczny
-    if len(image.shape) != 2:
-        messagebox.showerror("Błąd", "Operacja działa tylko na obrazach monochromatycznych.")
-        return
-    
     # Okno dialogowe z histogramem
     dialog = Toplevel()
     threshold(dialog, "Progowanie binarne", perform_binary_threshold)
@@ -972,6 +965,44 @@ def perform_binary_threshold(image, threshold):
             lut[i] = 255  # biały
         else:
             lut[i] = 0    # czarny
+    
+    # Zastosuj LUT do obrazu
+    result = lut[image]
+    
+    return result
+
+def threshold_preserve_gray():
+    """Progowanie z zachowaniem poziomów szarości."""
+    if globals_var.current_window not in globals_var.opened_images:
+        messagebox.showerror("Błąd", "Brak aktywnego okna z obrazem.")
+        return
+    
+    # Okno dialogowe z histogramem
+    dialog = Toplevel()
+    threshold(dialog, "Progowanie z zachowaniem poziomów szarości", perform_threshold_preserve_gray)
+
+def perform_threshold_preserve_gray(image, threshold):
+    """
+    Wykonuje progowanie z zachowaniem poziomów szarości.
+    Piksele poniżej progu są zerowane (czarne),
+    piksele >= progu zachowują swoje wartości.
+    
+    Args:
+        image: obraz wejściowy (monochromatyczny)
+        threshold: wartość progu (0-255)
+    
+    Returns:
+        obraz po progowaniu z zachowaniem poziomów szarości
+    """
+    # Tworzenie tablicy LUT
+    lut = np.zeros(256, dtype=np.uint8)
+    
+    # Wypełnij tablicę LUT zgodnie z progowaniem z zachowaniem poziomów
+    for i in range(256):
+        if i >= threshold:
+            lut[i] = i  # zachowaj oryginalną wartość
+        else:
+            lut[i] = 0  # zeruj (czarny)
     
     # Zastosuj LUT do obrazu
     result = lut[image]
