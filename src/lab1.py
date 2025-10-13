@@ -9,72 +9,9 @@ from PIL import Image, ImageTk  # do konwersji obrazów do formatu Tkinter
 import numpy as np # do operacji na tablicach
 import globals_var  # zmienne globalne
 from win_thread import win_thread
-import threading # do wielowątkowości
+from basic import *
 
 """funkcje zrobione na labach 1"""
-
-def show_image(image, title="Podgląd obrazu"):
-    """Wyświetla obraz w nowym oknie Tkinter z Canvas."""
-    win = Toplevel()
-    win.title(title)
-
-    # Konwersja obrazu OpenCV (BGR) do PIL (RGB)
-    image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-    pil_img = Image.fromarray(image_rgb)
-    photo = ImageTk.PhotoImage(pil_img)
-
-    canvas = Canvas(win, width=photo.width(), height=photo.height())
-    img_id = canvas.create_image(0, 0, anchor="nw", image=photo)
-    canvas.image = photo  # zapobiega usunięciu z pamięci
-
-    # dodaj do słownika
-    globals_var.opened_images[win] = {"id": globals_var.current_id, "image": image, "filename": title}
-    globals_var.current_id += 1
-    # uruchom wątek monitorujący okno
-    threading.Thread(target=win_thread, daemon=True, args=(win,)).start()
-    """
-    # obsługa focusa
-    def on_focus(event):
-        globals_var.current_window = win
-
-    win.bind("<FocusIn>", on_focus)
-    globals_var.current_window = win
-    """
-    # ---------zmiana wielkości obrazu scrollem myszki ---------
-    # Przechowuj oryginalny obraz i aktualny zoom
-    win.original_image = image
-    win.zoom = 1.0
-
-    def update_image():
-        # Przeskaluj obraz zgodnie z win.zoom
-        # konwersja do PIL
-        pil_img = Image.fromarray(cv2.cvtColor(win.original_image, cv2.COLOR_BGR2RGB))
-        # pobieranie rozmiaru
-        w, h = pil_img.size
-        # aktualny współczynnik zoom
-        scale = win.zoom
-        # przeskalowanie obrazu
-        pil_img = pil_img.resize((int(w * scale), int(h * scale)), Image.LANCZOS)
-        # tworzy obiekt PhotoImage
-        photo = ImageTk.PhotoImage(pil_img)
-        # ustawia rozmiar canvasa i aktualizuje obraz
-        canvas.config(width=photo.width(), height=photo.height())
-        # przywiązanie obrazu do canvasa, by nie został usunięty z pamięci
-        canvas.photo = photo
-        # aktualizacja obrazu na canvasie
-        canvas.itemconfig(img_id, image=photo)
-        win.title(f"{title} {win.zoom*100:.0f}% " + ("Monochromatyczny" if len(image.shape) == 2 else "Kolorowy"))
-        canvas.pack()
-
-    def on_mousewheel(event):
-        # Zoom in/out
-        win.zoom *= 1.1 if event.delta > 0 else 1/1.1
-        update_image()
-
-    canvas.bind("<MouseWheel>", on_mousewheel)
-    win.bind("<FocusIn>", lambda e: setattr(globals_var, "current_window", win))
-    update_image()
-    # ----------------------------------------------------------
 
 def save_image():
     """Zapisuje sfocusowany obraz w wybranej przez użytkownika lokalizacji."""
@@ -120,8 +57,7 @@ def open_and_show_image():
             image = cv2.imdecode(file_bytes, cv2.IMREAD_UNCHANGED)
         if image is not None:
             # Dodaj ID do nazwy pliku
-            stem, ext = file_path_obj.stem, file_path_obj.suffix
-            display_name = f"{stem}[{globals_var.current_id}]{ext}"
+            display_name = new_file_name(file_path_obj, f"[{globals_var.current_id}]")
             # Pokaz obraz
             show_image(image, title=display_name)
         else:
@@ -133,8 +69,7 @@ def duplicate_focused_image():
         img_info = globals_var.opened_images[globals_var.current_window]
         image_copy = img_info["image"].copy()
         # Dodaj _copy do nazwy pliku przed rozszerzeniem
-        stem, ext = Path(img_info["filename"]).stem, Path(img_info["filename"]).suffix
-        new_name = f"{stem}_copy{ext}"
+        new_name = new_file_name(Path(img_info["filename"]), "_copy")
         show_image(image_copy, title=new_name)
     else:
         messagebox.showerror("Błąd", "Brak aktywnego okna z obrazem do duplikacji.")
@@ -148,56 +83,6 @@ def duplicate_focused_image():
 #         else:
 #             print("Brak aktywnego okna z obrazem.")
 #         time.sleep(5)  # co 5 sekund
-
-def generate_lut():
-    """generuje LUT na podstawie stworzonej jednowymiarowej tablicy.
-    tablica będzie miała indeks związany z poziomem jasności,
-    a wartość będzie odpowiadała liczbie pikseli w obrazie o takiej wartości
-    "color" czy kolorowy albo monochromatyczny
-    "lut" tablica lub tablice lut
-    "title" tytuł okna
-    """
-    if globals_var.current_window in globals_var.opened_images:
-        img_info = globals_var.opened_images[globals_var.current_window]
-        tit = f"{img_info["filename"]} tablica LUT"
-
-        image = img_info["image"]
-        h, w = 200, 256 # rozmiar obrazka z LUT
-
-        # Sprawdź, czy obraz jest monochromatyczny czy kolorowy
-        if len(image.shape) == 2:
-            # MONOCHROMATYCZNY
-            lut = [0] * 256
-            height, width = image.shape
-            for y in range(height):
-                for x in range(width):
-                    val = image[y, x]
-                    lut[val] += 1
-            result = {"color": False, "lut": lut, "title": tit}
-
-        elif (len(image.shape) == 2 or (len(image.shape) == 3 and image.shape[2] in [3, 4])):
-            """ poprzedni warunek nie działał dla .png len(image.shape) == 3 and image.shape[2] == 3"""
-            # KOLOROWY
-            lut_b = [0] * 256
-            lut_g = [0] * 256
-            lut_r = [0] * 256
-            height, width, _ = image.shape
-            for y in range(height):
-                for x in range(width):
-                    b, g, r = image[y, x][:3]
-                    lut_b[b] += 1
-                    lut_g[g] += 1
-                    lut_r[r] += 1
-            result = {"color": True, "lut": [lut_r, lut_g, lut_b], "title": tit}
-
-        else:
-            messagebox.showerror("Błąd", "Nieobsługiwany format obrazu.")
-            return None
-        
-        return result
-    else:
-        messagebox.showerror("Błąd", "Brak aktywnego okna z obrazem.")
-        return None
 
 def show_lut():
     """Generuje i wyświetla tablicę LUT dla aktualnie sfocusowanego obrazu."""
@@ -349,28 +234,7 @@ def cal_hist(okno):
             show_hist(data)
         
         else:
-            """
-            # RED
-            norm_r, var_max_r, mean_r, std_r, median_value_r, total_pixels_r = cal_mono_hist(lut["lut"][0])
-            data = {"main_frame": main_frame, "norm": norm_r, "var_max": var_max_r, "bar_width": bar_width,
-                    "mean": mean_r, "std": std_r, "median_value": median_value_r, "total_pixels": total_pixels_r,
-                    "color": "red"}
-            show_hist(data)
-
-            #GREEN
-            norm_g, var_max_g, mean_g, std_g, median_value_g, total_pixels_g = cal_mono_hist(lut["lut"][1])
-            data = {"main_frame": main_frame, "norm": norm_g, "var_max": var_max_g, "bar_width": bar_width,
-                    "mean": mean_g, "std": std_g, "median_value": median_value_g, "total_pixels": total_pixels_g,
-                    "color": "green"}
-            show_hist(data)
-
-            #BLUE
-            norm_b, var_max_b, mean_b, std_b, median_value_b, total_pixels_b = cal_mono_hist(lut["lut"][2])
-            data = {"main_frame": main_frame, "norm": norm_b, "var_max": var_max_b, "bar_width": bar_width,
-                    "mean": mean_b, "std": std_b, "median_value": median_value_b, "total_pixels": total_pixels_b,
-                    "color": "blue"}
-            show_hist(data)
-            """ 
+            #dla kolorowych
             colors = ["red", "green", "blue"]
 
             for i, color in enumerate(colors):
@@ -501,8 +365,7 @@ def calandshow_without_supersaturation_hist():
 
         image_stretched = np.dstack((b_stretched, g_stretched, r_stretched))
 
-    stem, ext = Path(img_info["filename"]).stem, Path(img_info["filename"]).suffix
-    title = f"{stem}_without_supersaturation{ext}"
+    title = new_file_name(Path(img_info["filename"]), "_without_supersaturation")
     show_image(image_stretched, title=title)
 
 def cal_with_supersaturation5_hist(image, lut):
@@ -580,8 +443,7 @@ def calandshow_with_supersaturation5_hist():
         b_stretched = cal_with_supersaturation5_hist(b, lut_values[2])
         image_stretched = np.dstack((b_stretched, g_stretched, r_stretched))
     
-    stem, ext = Path(img_info["filename"]).stem, Path(img_info["filename"]).suffix
-    title = f"{stem}_with_supersaturation5{ext}"
+    title = new_file_name(Path(img_info["filename"]), "_with_supersaturation5")
     show_image(image_stretched, title=title)
 
 def calhistogram_equalization(lut, image):
@@ -711,8 +573,7 @@ def histogram_equalization():
     #equalized_image_bgr = cv2.cvtColor(equalized_image, cv2.COLOR_GRAY2BGR)
     
     # Wyświetlenie wyniku
-    stem, ext = Path(img_info["filename"]).stem, Path(img_info["filename"]).suffix
-    title = f"{stem}_eq{ext}"
+    title = new_file_name(Path(img_info["filename"]), "_eq")
     show_image(equalized_image, title)
 
 def negation():
@@ -734,8 +595,7 @@ def negation():
     
     # Wyświetlenie
     #negated_image_bgr = cv2.cvtColor(negated_image, cv2.COLOR_GRAY2BGR)
-    stem, ext = Path(img_info["filename"]).stem, Path(img_info["filename"]).suffix
-    title = f"{stem}_negation{ext}"
+    title = new_file_name(Path(img_info["filename"]), "_negation")
     show_image(negated_image, title)
 
 def reduce_gray_levels():
@@ -794,8 +654,7 @@ def reduce_gray_levels():
             result_image = perform_gray_reduction(image, levels)
             
             # Wyświetl wynik
-            stem, ext = Path(img_info["filename"]).stem, Path(img_info["filename"]).suffix
-            title = f"{stem}_reduction{levels}{ext}"
+            title = new_file_name(Path(img_info["filename"]), f"_reduction{levels}")
             show_image(result_image, title)
             
         except ValueError:
@@ -841,12 +700,13 @@ def perform_gray_reduction(image, levels):
     
     return result
 
-def threshold(dialog, title, function):
+def threshold(dialog, title, function, add_name_suffix):
     """kod pokazujący okienko do progowania. można ten kod użyć jako progowanie binarne lub z zachowaniem poziomów szarości
     Args:
         dialog: okno dialogowe
         title: tytuł okna
-        function: funkcja, która się uruchamia po kliknięciu zastosuj"""
+        function: funkcja, która się uruchamia po kliknięciu zastosuj
+        add_name_suffix: dodatek do nazwy pliku wynikowego"""
     
     img_info = globals_var.opened_images[globals_var.current_window]
     image = img_info["image"]
@@ -905,7 +765,7 @@ def threshold(dialog, title, function):
         from_=0,
         to=255,
         orient=tk.HORIZONTAL,
-        length=400,
+        length=515,
         command=update_entry_from_slider
     )
     slider.set(128)  # wartość domyślna
@@ -924,8 +784,7 @@ def threshold(dialog, title, function):
             result_image = function(image, threshold_value)
             
             # Wyświetl wynik
-            stem, ext = Path(img_info["filename"]).stem, Path(img_info["filename"]).suffix
-            title = f"{stem}_binarythreshold{threshold_value}{ext}"
+            title = new_file_name(Path(img_info["filename"]), f"{add_name_suffix}{threshold_value}")
             show_image(result_image, title)
             
         except ValueError:
@@ -942,7 +801,7 @@ def binary_threshold():
     
     # Okno dialogowe z histogramem
     dialog = Toplevel()
-    threshold(dialog, "Progowanie binarne", perform_binary_threshold)
+    threshold(dialog, "Progowanie binarne", perform_binary_threshold, "_binarythreshold")
 
 
 def perform_binary_threshold(image, threshold):
@@ -979,7 +838,7 @@ def threshold_preserve_gray():
     
     # Okno dialogowe z histogramem
     dialog = Toplevel()
-    threshold(dialog, "Progowanie z zachowaniem poziomów szarości", perform_threshold_preserve_gray)
+    threshold(dialog, "Progowanie z zachowaniem poziomów szarości", perform_threshold_preserve_gray, "_thresholdpreservegray")
 
 def perform_threshold_preserve_gray(image, threshold):
     """
