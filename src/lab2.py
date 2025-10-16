@@ -78,7 +78,7 @@ def select_images_window():
     # Lista par (klucz_słownika, nazwa_pliku, obiekt_obrazu)
     image_data = []
     for key, data in globals_var.opened_images.items():
-        image_data.append((key, data.get("filename", "Brak Nazwy"), data.get("image")))
+        image_data.append((key, data.get("filename", "Brak Nazwy"), data.get("image"), data.get("id")))
 
     if not image_data:
         messagebox.showinfo("Brak danych", "Brak danych obrazów do przetworzenia.")
@@ -86,7 +86,7 @@ def select_images_window():
 
     # 3. Utworzenie głównego okna (root) i okna podrzędnego (Toplevel)
     # Musimy mieć root, nawet jeśli jest schowany, żeby Toplevel działał poprawnie.
-    # W Twojej aplikacji root prawdopodobnie już istnieje. Tutaj go symulujemy.
+    # W aplikacji root już istnieje. Tutaj go symulujemy.
     try:
         root = tk.Tk()
         root.withdraw() # Ukryj główne okno
@@ -97,7 +97,7 @@ def select_images_window():
 
     selection_window = tk.Toplevel(root)
     selection_window.title("Wybierz Obrazy")
-    selection_window.geometry("400x300")
+    selection_window.geometry("450x300")
     # Zabezpieczenie przed wielokrotnym otwieraniem (opcjonalne, ale zalecane)
     selection_window.grab_set()
 
@@ -113,11 +113,23 @@ def select_images_window():
         nonlocal selected_images
         selected_images.clear() # Czyścimy listę na wszelki wypadek
 
+        print(check_vars)
+
+        print("---- DEBUG ----")
+        for k in globals_var.opened_images.keys():
+            print("opened_images key:", k, id(k))
+        for k in check_vars.keys():
+            print("check_vars key:", k, id(k))
+        print("----------------")
+
         for key, var in check_vars.items():
+            print("Sprawdzam:", key, "Wartość:", var.get())
             if var.get() == 1:  # Jeśli Checkbutton jest zaznaczony (wartość 1)
-                # Odszukaj odpowiadający obiekt obrazu w global_vars.opened_images
+                # Odszukaj odpowiadający obiekt obrazu w globals_var.opened_images
+                print("Zaznaczono:", key)
                 image_object = globals_var.opened_images.get(key, {}).get("image")
                 if image_object:
+                    print("jest jakiś obiekt!")
                     selected_images.append(image_object)
         
         # Zamykamy okno i zwalniamy focus
@@ -146,7 +158,7 @@ def select_images_window():
     canvas.create_window((0, 0), window=check_frame, anchor="nw")
 
     # 5. Generowanie Checkbuttonów
-    for key, filename, image_obj in image_data:
+    for key, filename, image_obj, id in image_data:
         # Używamy IntVara, żeby sprawdzić, czy Checkbutton jest zaznaczony (0 lub 1)
         var = tk.IntVar(value=0) 
         check_vars[key] = var
@@ -175,6 +187,7 @@ def add_images_without_saturation():
     """
 
     images = select_images_window()
+    print(images)
 
     if not images or len(images) < 2:
         messagebox.showerror("Błąd", "Potrzebne są co najmniej 2 obrazy!")
