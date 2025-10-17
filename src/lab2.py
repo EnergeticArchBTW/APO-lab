@@ -5,6 +5,7 @@ from tkinter import Toplevel, Canvas #do okna z obrazem
 from tkinter import messagebox # do błędów
 import tkinter as tk # do tablicy LUT
 from tkinter import ttk # do tablicy LUT
+from tkinter import simpledialog # do pobierania wartości od użytkownika
 from PIL import Image, ImageTk  # do konwersji obrazów do formatu Tkinter
 import numpy as np # do operacji na tablicach
 import globals_var  # zmienne globalne
@@ -256,4 +257,242 @@ def add_images_with_saturation():
         result = cv2.add(result, img) 
     
     show_image(result, f"with_sat[{globals_var.current_id}]")
-    globals_var.current_id += 1
+
+def operation_on_scalar(image, operation, value, saturation=True):
+    """
+    Wykonuje operacje arytmetyczne (dodawanie, mnożenie, dzielenie)
+    na obrazie (tablica NumPy) i liczbie całkowitej.
+
+    Params:
+        image: Źródłowy obraz (tablica NumPy, np. uint8).
+        operation: Rodzaj operacji jako string: 'add', 'multiply', 'divide'.
+        value: Liczba całkowita, przez którą ma być wykonana operacja.
+        saturation: Boolean.
+                       True = tryb Z WYSYCENIEM (wyniki obcinane do 0-255).
+                       False = tryb BEZ WYSYCENIA (wyniki zawijane, modulo 256).
+    Returns:
+        Nowy obraz (tablica NumPy) po operacji lub None w przypadku błędu.
+    """
+    
+    # --- Walidacja danych wejściowych ---
+    if image is None:
+        messagebox.showerror("Błąd operacji", "Obraz wejściowy ma wartość None.")
+        return None
+        
+    operation = operation.lower().strip()
+    
+    try:
+        # Upewnij się, że 'value' jest liczbą
+        value = float(value) 
+    except ValueError:
+        messagebox.showerror("Błąd wartości", f"Wartość '{value}' nie jest poprawną liczbą.")
+        return None
+
+    if operation == 'divide' and value == 0:
+        messagebox.showerror("Błąd operacji", "Dzielenie przez zero jest niedozwolone.")
+        return None
+
+    # --- Logika operacji ---
+    
+    if saturation:
+        # ==================================
+        # === TRYB Z WYSYCENIEM (obcinanie) ===
+        # ==================================
+        
+        # Używamy tymczasowo float64, aby uniknąć błędów przepełnienia
+        # przed ostatecznym obcięciem.
+        temp_image = image.astype(np.float64)
+
+        if operation == 'add':
+            result_float = temp_image + value
+        elif operation == 'multiply':
+            result_float = temp_image * value
+        elif operation == 'divide':
+            result_float = temp_image / value
+        else:
+            messagebox.showerror("Błąd operacji", f"Nieznana operacja: '{operation}'.")
+            return None
+        
+        # Obcinamy wynik do bezpiecznego zakresu 0-255
+        # Zaokrąglamy przed rzutowaniem na liczbę całkowitą
+        result_clipped = np.clip(np.round(result_float), 0, 255)
+        
+        # Konwertujemy z powrotem do uint8
+        result = result_clipped.astype(np.uint8)
+
+    else:
+        # =====================================
+        # === TRYB BEZ WYSYCENIA (zawijanie) ===
+        # =====================================
+        
+        # Celowo rzutujemy na uint8 na końcu, aby wymusić arytmetykę modulo 256
+        
+        if operation == 'add':
+            # Używamy int32, aby (200 + 100) dało 300, 
+            # a dopiero potem rzutowanie (300 % 256 = 44)
+            result = (image.astype(np.int32) + int(value)).astype(np.uint8)
+            
+        elif operation == 'multiply':
+            # Używamy int32, aby (200 * 2) dało 400,
+            # a dopiero potem rzutowanie (400 % 256 = 144)
+            result = (image.astype(np.int32) * int(value)).astype(np.uint8)
+            
+        elif operation == 'divide':
+            # Dzielenie z natury nie "zawija się" w ten sam sposób.
+            # Najbliższą analogią jest wykonanie dzielenia na floatach
+            # i rzutowanie wyniku na uint8, co zawinie wartości > 255
+            # (np. dzielenie przez 0.5 da mnożenie * 2)
+            result_float = image.astype(np.float64) / value
+            result = np.round(result_float).astype(np.uint8)
+            
+        else:
+            messagebox.showerror("Błąd operacji", f"Nieznana operacja: '{operation}'.")
+            return None
+
+    return result
+
+def get_integer_input(root, title="Podaj liczbę"):
+    """
+    Wyświetla proste, modalne okno dialogowe proszące o liczbę całkowitą.
+    Funkcja czeka na odpowiedź użytkownika.
+    
+    Params:
+        root: Główne okno aplikacji (tk.Tk() lub Toplevel).
+        title: Tytuł okienka.
+    Returns:
+        return: Wprowadzona liczba (int) lub None, jeśli użytkownik anulował.
+    """
+    
+    value = simpledialog.askinteger(
+        title,  # Tytuł okna
+        "Wprowadź wartość:",  # Tekst wewnątrz okna (prompt)
+        parent=root  # Okno nadrzędne (dzięki temu jest modalne)
+    )
+    
+    return value
+
+def add_number_with_stauration():
+    """funkcja dodająca skalar do obrazu Z WYSYCENIEM (saturacją, czyli obcinaniem) z GUI"""
+    if globals_var.current_window in globals_var.opened_images:
+        img_info = globals_var.opened_images[globals_var.current_window]
+        # sprawdzanie czy monochromatyczny
+        if len(img_info["image"].shape) != 2:
+            messagebox.showerror("Błąd", "Obraz musi być jednokanałowy (czarno-biały)!")
+            return
+        image = img_info["image"]
+    else:
+        messagebox.showerror("Błąd", "Brak aktywnego okna z obrazem.")
+        return
+    
+    value = get_integer_input(globals_var.root, "Dodawanie z wysyceniem - podaj wartość całkowitą")
+    if value is None:
+        return  # Użytkownik anulował
+    
+    result = operation_on_scalar(image, 'add', value, saturation=True)
+    if result is not None:
+        show_image(result, f"add_num_with_sat[{globals_var.current_id}]")
+
+def add_number_without_stauration():
+    """funkcja dodająca skalar do obrazu BEZ WYSYCENIA (z zawijaniem) z GUI"""
+    if globals_var.current_window in globals_var.opened_images:
+        img_info = globals_var.opened_images[globals_var.current_window]
+        # sprawdzanie czy monochromatyczny
+        if len(img_info["image"].shape) != 2:
+            messagebox.showerror("Błąd", "Obraz musi być jednokanałowy (czarno-biały)!")
+            return
+        image = img_info["image"]
+    else:
+        messagebox.showerror("Błąd", "Brak aktywnego okna z obrazem.")
+        return
+    
+    value = get_integer_input(globals_var.root, "Dodawanie bez wysyceniem - podaj wartość całkowitą")
+    if value is None:
+        return  # Użytkownik anulował
+    
+    result = operation_on_scalar(image, 'add', value, saturation=False)
+    if result is not None:
+        show_image(result, f"add_num_without_sat[{globals_var.current_id}]")
+
+def divide_number_with_stauration():
+    """funkcja dzieląca obraz przez skalar Z WYSYCENIEM (saturacją, czyli obcinaniem) z GUI"""
+    if globals_var.current_window in globals_var.opened_images:
+        img_info = globals_var.opened_images[globals_var.current_window]
+        # sprawdzanie czy monochromatyczny
+        if len(img_info["image"].shape) != 2:
+            messagebox.showerror("Błąd", "Obraz musi być jednokanałowy (czarno-biały)!")
+            return
+        image = img_info["image"]
+    else:
+        messagebox.showerror("Błąd", "Brak aktywnego okna z obrazem.")
+        return
+    
+    value = get_integer_input(globals_var.root, "Dzielenie z wysyceniem - podaj wartość całkowitą")
+    if value is None:
+        return  # Użytkownik anulował
+    
+    result = operation_on_scalar(image, 'divide', value, saturation=True)
+    if result is not None:
+        show_image(result, f"divide_num_with_sat[{globals_var.current_id}]")
+
+def divide_number_without_stauration():
+    """funkcja dzieląca obraz przez skalar BEZ WYSYCENIA (z zawijaniem) z GUI"""
+    if globals_var.current_window in globals_var.opened_images:
+        img_info = globals_var.opened_images[globals_var.current_window]
+        # sprawdzanie czy monochromatyczny
+        if len(img_info["image"].shape) != 2:
+            messagebox.showerror("Błąd", "Obraz musi być jednokanałowy (czarno-biały)!")
+            return
+        image = img_info["image"]
+    else:
+        messagebox.showerror("Błąd", "Brak aktywnego okna z obrazem.")
+        return
+    
+    value = get_integer_input(globals_var.root, "Dzielenie bez wysyceniem - podaj wartość całkowitą")
+    if value is None:
+        return  # Użytkownik anulował
+    
+    result = operation_on_scalar(image, 'divide', value, saturation=False)
+    if result is not None:
+        show_image(result, f"divide_num_without_sat[{globals_var.current_id}]")
+
+def multiply_number_with_stauration():
+    """funkcja mnożąca obraz przez skalar Z WYSYCENIEM (saturacją, czyli obcinaniem) z GUI"""
+    if globals_var.current_window in globals_var.opened_images:
+        img_info = globals_var.opened_images[globals_var.current_window]
+        # sprawdzanie czy monochromatyczny
+        if len(img_info["image"].shape) != 2:
+            messagebox.showerror("Błąd", "Obraz musi być jednokanałowy (czarno-biały)!")
+            return
+        image = img_info["image"]
+    else:
+        messagebox.showerror("Błąd", "Brak aktywnego okna z obrazem.")
+        return
+    
+    value = get_integer_input(globals_var.root, "Mnożenie z wysyceniem - podaj wartość całkowitą")
+    if value is None:
+        return  # Użytkownik anulował
+    
+    result = operation_on_scalar(image, 'multiply', value, saturation=True)
+    if result is not None:
+        show_image(result, f"multiply_num_with_sat[{globals_var.current_id}]")
+
+def multiply_number_without_stauration():
+    """funkcja mnożąca obraz przez skalar BEZ WYSYCENIA (z zawijaniem) z GUI"""
+    if globals_var.current_window in globals_var.opened_images:
+        img_info = globals_var.opened_images[globals_var.current_window]
+        # sprawdzanie czy monochromatyczny
+        if len(img_info["image"].shape) != 2:
+            messagebox.showerror("Błąd", "Obraz musi być jednokanałowy (czarno-biały)!")
+            return
+        image = img_info["image"]
+    else:
+        messagebox.showerror("Błąd", "Brak aktywnego okna z obrazem.")
+        return
+    
+    value = get_integer_input(globals_var.root, "Mnożenie bez wysyceniem - podaj wartość całkowitą")
+    if value is None:
+        return  # Użytkownik anulował
+    
+    result = operation_on_scalar(image, 'multiply', value, saturation=False)
+    if result is not None:
+        show_image(result, f"multiply_num_without_sat[{globals_var.current_id}]")

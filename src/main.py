@@ -13,7 +13,9 @@ class MainMenu(Tk):
             with_supersaturation5_hist_callback, eq_callback, negation_callback, reduce_gray_callback, binary_threshold_callback,
             threshold_preserve_gray_callback,
             # lab 2
-            add_images_without_saturation_callback, add_images_with_saturation_callback):
+            add_images_without_saturation_callback, add_images_with_saturation_callback, add_number_with_stauration_callback,
+            add_number_without_stauration_callback, divide_number_with_stauration_callback, divide_number_without_stauration_callback,
+            multiply_number_with_stauration_callback, multiply_number_without_stauration_callback):
         super().__init__()
         self.title("APO laby - Michał Rymkiewicz")
         self.minsize(400, 200)  # minimalna szerokość: 400px, wysokość: 200px
@@ -45,6 +47,12 @@ class MainMenu(Tk):
         menubar.add_cascade(label="Lab 2", menu=file_menu2)
         file_menu2.add_command(label="Dodawanie obrazów do 5 bez wysycenia", command=add_images_without_saturation_callback)
         file_menu2.add_command(label="Dodawanie obrazów do 5 z wysyceniem", command=add_images_with_saturation_callback)
+        file_menu2.add_command(label="Dodawanie liczby całkowitej do obrazu z saturacją", command=add_number_with_stauration_callback)
+        file_menu2.add_command(label="Dodawanie liczby całkowitej do obrazu bez saturacji", command=add_number_without_stauration_callback)
+        file_menu2.add_command(label="Dzielenie liczby całkowitej do obrazu z saturacją", command=divide_number_with_stauration_callback)
+        file_menu2.add_command(label="Dzielenie liczby całkowitej do obrazu bez saturacji", command=divide_number_without_stauration_callback)
+        file_menu2.add_command(label="Mnożenie liczby całkowitej do obrazu z saturacją", command=multiply_number_with_stauration_callback)
+        file_menu2.add_command(label="Mnożenie liczby całkowitej do obrazu bez saturacji", command=multiply_number_without_stauration_callback)
 
 if __name__ == "__main__":
     # Tworzymy folder outputs, jeśli nie istnieje
@@ -55,5 +63,6 @@ if __name__ == "__main__":
         open_and_show_image, save_image, duplicate_focused_image, show_lut, cal_and_show_hist, calandshow_without_supersaturation_hist,
         calandshow_with_supersaturation5_hist, histogram_equalization, negation, reduce_gray_levels, binary_threshold, threshold_preserve_gray,
         # lab 2
-        add_images_without_saturation, add_images_with_saturation)
+        add_images_without_saturation, add_images_with_saturation, add_number_with_stauration, add_number_without_stauration, divide_number_with_stauration,
+        divide_number_without_stauration, multiply_number_with_stauration, multiply_number_without_stauration)
     globals_var.root.mainloop()
