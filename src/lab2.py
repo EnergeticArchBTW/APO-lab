@@ -513,6 +513,10 @@ def subtract_images_absolute():
     
     img1 = images[0]
     img2 = images[1]
+
+    if len(img1.shape) != 2 and len(img2.shape) != 2:
+            messagebox.showerror("Błąd", "Obrazy muszą być jednokanałowe (czarno-białe)!")
+            return
     
     # 2. Porównanie obrazów (czy mają ten sam rozmiar, typ itp.)
     if not compare_images(img1, img2):
