@@ -27,38 +27,6 @@ def compare_images(image1, image2):
         return False
     return True
 
-def add_images_no_saturation(images):
-    """
-    Dodaje obrazy bez wysycenia (z zawijaniem wartości).
-    
-    Args:
-        images: lista obrazów do dodania (2-5 obrazów)
-    
-    Returns:
-        numpy.ndarray: wynikowy obraz lub None w przypadku błędu
-    """
-    if not images or len(images) < 2:
-        messagebox.showerror("Błąd", "Potrzebne są co najmniej 2 obrazy!")
-        return None
-    
-    if len(images) > 5:
-        messagebox.showerror("Błąd", "Maksymalnie 5 obrazów!")
-        return None
-    
-    # Porównaj wszystkie obrazy z pierwszym
-    first_img = images[0]
-    for i, img in enumerate(images[1:], 1):
-        if not compare_images(first_img, img):
-            messagebox.showerror("Błąd", f"Obraz {i+1} nie pasuje do pierwszego!")
-            return None
-    
-    # Dodawanie bez wysycenia - OpenCV automatycznie zawija wartości (modulo 256)
-    result = images[0].copy()
-    for img in images[1:]:
-        result = cv2.add(result, img)
-    
-    return result
-
 def select_images_window():
     """
     Otwiera podrzędne okno Tkinter z listą Checkbuttonów bazujących na
@@ -227,7 +195,7 @@ def select_images_window():
 
 
 def add_images_without_saturation():
-    """funkcja dodająca od 2 do 5 obrazów bez wysycenia z GUI
+    """funkcja dodająca od 2 do 5 obrazów BEZ WYSYCENIA (z zawijaniem) z GUI
     wyświetla wynikowy obraz lub nic nie robi w przypadku błędu
     """
 
@@ -249,9 +217,43 @@ def add_images_without_saturation():
             messagebox.showerror("Błąd", f"Obraz {i+1} nie pasuje do pierwszego!")
             return
     
-    # Dodawanie bez wysycenia - OpenCV automatycznie zawija wartości (modulo 256)
+    # Dodawanie BEZ WYSYCENIA - arytmetyka NumPy zawija wartości (np. 200 + 100 = 44)
     result = images[0].copy()
     for img in images[1:]:
-        result = cv2.add(result, img)
+        # Operator '+' na tablicach NumPy (uint8) wykonuje dodawanie modulo 256
+        result = result + img 
     
-    show_image(result, "Wynik dodawania bez wysycenia")
+    show_image(result, f"without_sat[{globals_var.current_id}]")
+    globals_var.current_id += 1
+
+def add_images_with_saturation():
+    """funkcja dodająca od 2 do 5 obrazów Z WYSYCENIEM (saturacją, czyli obcinaniem) z GUI
+    wyświetla wynikowy obraz lub nic nie robi w przypadku błędu
+    """
+
+    images = select_images_window()
+    print(images)
+
+    if not images or len(images) < 2:
+        messagebox.showerror("Błąd", "Potrzebne są co najmniej 2 obrazy!")
+        return
+    
+    if len(images) > 5:
+        messagebox.showerror("Błąd", "Maksymalnie 5 obrazów!")
+        return
+    
+    # Porównaj wszystkie obrazy z pierwszym
+    first_img = images[0]
+    for i, img in enumerate(images[1:], 1):
+        if not compare_images(first_img, img):
+            messagebox.showerror("Błąd", f"Obraz {i+1} nie pasuje do pierwszego!")
+            return
+    
+    # Dodawanie Z WYSYCENIEM - OpenCV obcina wartości do 255 (np. 200 + 100 = 255)
+    result = images[0].copy()
+    for img in images[1:]:
+        # cv2.add() wykonuje dodawanie z saturacją
+        result = cv2.add(result, img) 
+    
+    show_image(result, f"with_sat[{globals_var.current_id}]")
+    globals_var.current_id += 1

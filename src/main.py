@@ -13,7 +13,7 @@ class MainMenu(Tk):
             with_supersaturation5_hist_callback, eq_callback, negation_callback, reduce_gray_callback, binary_threshold_callback,
             threshold_preserve_gray_callback,
             # lab 2
-            add_images_without_saturation_callback):
+            add_images_without_saturation_callback, add_images_with_saturation_callback):
         super().__init__()
         self.title("APO laby - Michał Rymkiewicz")
         self.minsize(400, 200)  # minimalna szerokość: 400px, wysokość: 200px
@@ -44,6 +44,7 @@ class MainMenu(Tk):
         file_menu2 = Menu(menubar, tearoff=0)
         menubar.add_cascade(label="Lab 2", menu=file_menu2)
         file_menu2.add_command(label="Dodawanie obrazów do 5 bez wysycenia", command=add_images_without_saturation_callback)
+        file_menu2.add_command(label="Dodawanie obrazów do 5 z wysyceniem", command=add_images_with_saturation_callback)
 
 if __name__ == "__main__":
     # Tworzymy folder outputs, jeśli nie istnieje
@@ -54,5 +55,5 @@ if __name__ == "__main__":
         open_and_show_image, save_image, duplicate_focused_image, show_lut, cal_and_show_hist, calandshow_without_supersaturation_hist,
         calandshow_with_supersaturation5_hist, histogram_equalization, negation, reduce_gray_levels, binary_threshold, threshold_preserve_gray,
         # lab 2
-        add_images_without_saturation)
+        add_images_without_saturation, add_images_with_saturation)
     globals_var.root.mainloop()
