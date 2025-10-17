@@ -496,3 +496,33 @@ def multiply_number_without_stauration():
     result = operation_on_scalar(image, 'multiply', value, saturation=False)
     if result is not None:
         show_image(result, f"multiply_num_without_sat[{globals_var.current_id}]")
+
+def subtract_images_absolute():
+    """
+    Oblicza różnicę bezwzględną (absolute difference) dwóch obrazów 
+    wybranych przez użytkownika z GUI.
+    Wyświetla wynikowy obraz lub nic nie robi w przypadku błędu.
+    """
+
+    images = select_images_window()
+
+    # 1. Walidacja - do tej operacji potrzebujemy DOKŁADNIE dwóch obrazów
+    if not images or len(images) != 2:
+        messagebox.showerror("Błąd", "Potrzebne są dokładnie 2 obrazy do obliczenia różnicy bezwzględnej!")
+        return
+    
+    img1 = images[0]
+    img2 = images[1]
+    
+    # 2. Porównanie obrazów (czy mają ten sam rozmiar, typ itp.)
+    if not compare_images(img1, img2):
+        messagebox.showerror("Błąd", "Obrazy nie są zgodne (np. mają różne rozmiary).")
+        return
+    
+    # 3. Obliczenie różnicy bezwzględnej
+    # Funkcja cv2.absdiff jest zoptymalizowana i bezpieczna,
+    # oblicza |img1 - img2| dla każdego piksela.
+    result = cv2.absdiff(img1, img2)
+    
+    # 4. Wyświetlenie wyniku
+    show_image(result, f"abs_diff[{globals_var.current_id}]")
