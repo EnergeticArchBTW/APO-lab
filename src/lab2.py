@@ -75,29 +75,41 @@ def select_images_window():
         return []
 
     # 2. Przygotowanie danych do wyświetlenia
-    # Lista par (klucz_słownika, nazwa_pliku, obiekt_obrazu)
     image_data = []
+    print("\n--- DEBUG: Rozpoczynam przygotowanie 'image_data' ---")
+    
     for key, data in globals_var.opened_images.items():
-        image_data.append((key, data.get("filename", "Brak Nazwy"), data.get("image"), data.get("id")))
+        image_obj = data.get("image")
+        data_id = data.get("id")
+        
+        # Dodatkowy debug, aby sprawdzić, co jest w 'image'
+        if image_obj is None:
+            print(f"  [UWAGA]: Obraz dla klucza {key} (id: {data_id}) ma wartość None.")
+        else:
+            # Sprawdzamy typ, na wypadek gdyby to był numpy
+            if hasattr(image_obj, 'shape'): 
+                print(f"  [OK]: Obraz dla klucza {key} (id: {data_id}) to tablica NumPy o kształcie {image_obj.shape}")
+            else:
+                print(f"  [OK]: Obraz dla klucza {key} (id: {data_id}) to obiekt typu {type(image_obj)}")
+                
+        image_data.append((key, data.get("filename", "Brak Nazwy"), image_obj, data_id))
+    
+    print("--- DEBUG: Zakończono przygotowanie 'image_data' ---\n")
 
     if not image_data:
         messagebox.showinfo("Brak danych", "Brak danych obrazów do przetworzenia.")
+        selection_window.destroy() # Zamknij okno, jeśli zostało otwarte
         return []
 
-    # 3. Utworzenie głównego okna (root) i okna podrzędnego (Toplevel)
-    # Musimy mieć root, nawet jeśli jest schowany, żeby Toplevel działał poprawnie.
-    # W aplikacji root już istnieje. Tutaj go symulujemy.
-    try:
-        root = tk.Tk()
-        root.withdraw() # Ukryj główne okno
-    except tk.TclError:
-        # Możliwe, że root już istnieje (np. w środowisku IDE/interaktywnym)
-        root = tk.Toplevel()
-        root.withdraw()
-
-    selection_window = tk.Toplevel(root)
+    # 3. Utworzenie okna podrzędnego (Toplevel)
+    # 'main_app_root' to główne okno Twojej aplikacji, przekazane jako argument
+    selection_window = tk.Toplevel(globals_var.root)
     selection_window.title("Wybierz Obrazy")
     selection_window.geometry("450x300")
+   
+    # Powiązanie okna z rodzicem (dobre praktyki)
+    selection_window.transient(globals_var.root) 
+   
     # Zabezpieczenie przed wielokrotnym otwieraniem (opcjonalne, ale zalecane)
     selection_window.grab_set()
 
@@ -108,40 +120,67 @@ def select_images_window():
     # Lista na finalnie wybrane obiekty zdjęć
     selected_images = []
 
+    # ----- POCZĄTEK DEBUGGINGU -----
+    print("\n--- DEBUG: START ---")
+    print("Aktualna zawartość globals_var.opened_images:")
+    if not globals_var.opened_images:
+        print("  Słownik jest PUSTY.")
+    else:
+        # Wypisujemy klucze (obiekty okien) i 'filename' dla identyfikacji
+        for okno_klucz, dane in globals_var.opened_images.items():
+            print(f"  Klucz (okno): {okno_klucz} -> Dane: {{'filename': {dane.get('filename')}, 'id': {dane.get('id')}}}")
+            
+    print("\nAktualna zawartość check_vars (klucz -> wartość zaznaczenia):")
+    if not check_vars:
+        print("  Słownik jest PUSTY.")
+    else:
+        for klucz, var in check_vars.items():
+            print(f"  Klucz (nazwa?): {klucz} -> Wartość Vara: {var.get()}")
+    print("--- DEBUG: Rozpoczynam pętlę ---\n")
+    # ----- KONIEC DEBUGGINGU -----
+
     def on_select_button_click():
         """Obsługuje kliknięcie przycisku 'Wybierz'."""
         nonlocal selected_images
-        selected_images.clear() # Czyścimy listę na wszelki wypadek
+        selected_images.clear() 
 
         print(check_vars)
 
-        print("---- DEBUG ----")
-        for k in globals_var.opened_images.keys():
-            print("opened_images key:", k, id(k))
-        for k in check_vars.keys():
-            print("check_vars key:", k, id(k))
-        print("----------------")
+        for checked_id, var in check_vars.items():
+        
+            print(f"Sprawdzam ID: {checked_id}, Wartość (zaznaczony?): {var.get()}")
+        
+            if var.get() == 1:  # Jeśli Checkbutton jest zaznaczony
+                print(f"  [ZAZNACZONO]: ID: {checked_id}")
+            
+                found_image = None
+            
+                for okno_key, data_dict in globals_var.opened_images.items():
+                    if data_dict.get("id") == checked_id:
+                        print(f"    ZNALAZŁEM! ID {checked_id} pasuje do okna {okno_key}")
+                        found_image = data_dict.get("image")
+                        break 
 
-        for key, var in check_vars.items():
-            print("Sprawdzam:", key, "Wartość:", var.get())
-            if var.get() == 1:  # Jeśli Checkbutton jest zaznaczony (wartość 1)
-                # Odszukaj odpowiadający obiekt obrazu w globals_var.opened_images
-                print("Zaznaczono:", key)
-                image_object = globals_var.opened_images.get(key, {}).get("image")
-                if image_object:
-                    print("jest jakiś obiekt!")
-                    selected_images.append(image_object)
+                # --- KRYTYCZNA POPRAWKA JEST TUTAJ ---
+                # Musimy użyć 'is not None', aby poprawnie obsługiwać
+                # tablice NumPy (które powodowały 'ValueError') ORAZ wartość None.
+                
+                if found_image is not None: 
+                    print("    Sukces: Dodaję obraz do listy.")
+                    selected_images.append(found_image)
+                else:
+                    # Ten błąd oznacza, że data_dict.get("image") zwróciło None.
+                    print(f"    BŁĄD: Obiekt obrazu znaleziony dla ID {checked_id} ma wartość 'None'. Nie można dodać.")
+
+        print(f"\nOstatecznie wybrano obrazów: {len(selected_images)}")
+
+        print("\n--- DEBUG: Pętla zakończona ---")
+        print(f"Ostateczna liczba wybranych obrazów: {len(selected_images)}")
+        print("--- DEBUG: KONIEC ---")
         
         # Zamykamy okno i zwalniamy focus
         selection_window.grab_release()
         selection_window.destroy()
-        
-        # Opcjonalnie: Zamykamy też root, jeśli został stworzony w tej funkcji
-        # W Twojej aplikacji (jeśli root jest głównym oknem) tego kroku nie rób!
-        try:
-            root.destroy()
-        except Exception:
-            pass
 
     # 4. Sekcja wyświetlania (Canvas + Frame dla przewijania)
     canvas = tk.Canvas(selection_window)
@@ -161,7 +200,7 @@ def select_images_window():
     for key, filename, image_obj, id in image_data:
         # Używamy IntVara, żeby sprawdzić, czy Checkbutton jest zaznaczony (0 lub 1)
         var = tk.IntVar(value=0) 
-        check_vars[key] = var
+        check_vars[id] = var
 
         # Checkbutton wyświetla nazwę pliku, a jego stan jest powiązany z var
         cb = tk.Checkbutton(check_frame, text=filename, variable=var, 
@@ -174,7 +213,13 @@ def select_images_window():
 
     # Uruchomienie pętli zdarzeń okna podrzędnego, czekając na jego zamknięcie
     # Musimy użyć wait_window, żeby funkcja mogła zwrócić wynik po zamknięciu okna.
-    selection_window.protocol("WM_DELETE_WINDOW", lambda: [selection_window.grab_release(), selection_window.destroy(), messagebox.showinfo("Anulowano", "Wybór anulowany."), root.destroy() if 'root' in locals() and root.winfo_exists() else None])
+    def on_cancel():
+        """Obsługuje zamknięcie okna przyciskiem 'X'."""
+        selection_window.grab_release()
+        selection_window.destroy()
+        # Funkcja główna 'select_images_window' po prostu zwróci pustą listę
+
+    selection_window.protocol("WM_DELETE_WINDOW", on_cancel)
     selection_window.wait_window(selection_window)
     
     # 7. Zwrócenie wyniku po zamknięciu okna

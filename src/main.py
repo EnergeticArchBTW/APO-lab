@@ -1,5 +1,6 @@
 # from menu import MainMenu # plik main.py definiuje listę rozwijaną
 from tkinter import Tk, Menu # do listy rozwijanej
+from globals_var import *
 from lab1 import * 
 from lab2 import * 
 
@@ -48,10 +49,10 @@ if __name__ == "__main__":
     # Tworzymy folder outputs, jeśli nie istnieje
     globals_var.OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     # threading.Thread(target=show_focused_number, daemon=True).start()
-    menu = MainMenu(
+    globals_var.root = MainMenu(
         # lab 1
         open_and_show_image, save_image, duplicate_focused_image, show_lut, cal_and_show_hist, calandshow_without_supersaturation_hist,
         calandshow_with_supersaturation5_hist, histogram_equalization, negation, reduce_gray_levels, binary_threshold, threshold_preserve_gray,
         # lab 2
         add_images_without_saturation)
-    menu.mainloop()
+    globals_var.root.mainloop()
