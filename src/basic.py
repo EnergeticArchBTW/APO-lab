@@ -54,6 +54,12 @@ def show_image(image, title="Podgląd obrazu"):
         photo = ImageTk.PhotoImage(pil_img)
         # ustawia rozmiar canvasa i aktualizuje obraz
         canvas.config(width=photo.width(), height=photo.height())
+
+        # Zmień rozmiar okna 'win', ale tylko jeśli nie jest zmaksymalizowane
+        if win.state() == 'normal':
+            win.geometry(f"{photo.width()}x{photo.height()}")
+        # --- KONIEC DODANEGO FRAGMENTU ---
+
         # przywiązanie obrazu do canvasa, by nie został usunięty z pamięci
         canvas.photo = photo
         # aktualizacja obrazu na canvasie
@@ -68,6 +74,58 @@ def show_image(image, title="Podgląd obrazu"):
 
     canvas.bind("<MouseWheel>", on_mousewheel)
     win.bind("<FocusIn>", lambda e: setattr(globals_var, "current_window", win))
+
+    # --------- obsługa maksymalizacji i zmiany rozmiaru okna ---------
+    win.previous_state = win.state()  # Zmienna do śledzenia poprzedniego stanu okna
+
+    def on_resize_or_maximize(event):
+        """Obsługuje zdarzenie zmiany rozmiaru lub stanu okna (np. maksymalizacji)."""
+        current_state = win.state()
+
+        # Sprawdzamy, czy okno *właśnie* zostało zmaksymalizowane
+        # (przeszło ze stanu 'normal' lub innego do 'zoomed')
+        if current_state == 'zoomed' and win.previous_state != 'zoomed':
+            print("maksymalizacja")
+            # UWAGA: Aby to działało poprawnie, widget Canvas MUSI
+            # być spakowany z opcjami fill="both" i expand=True,
+            # a funkcja update_image() NIE POWINNA zmieniać rozmiaru
+            # canvasu za pomocą canvas.config().
+            
+            # Zakładając, że canvas wypełnia okno, pobieramy jego aktualne wymiary
+            # (event.width i event.height odnoszą się do widgetu, do którego przypięto zdarzenie)
+            # Ponieważ zdarzenie jest przypięte do 'win', musimy pobrać rozmiar 'canvas'
+            # lub (prościej) rozmiar *wewnętrzny* okna:
+            
+            canvas_width = win.winfo_width()
+            canvas_height = win.winfo_height()
+
+            # Pobieramy oryginalne wymiary obrazu (z atrybutów numpy/OpenCV)
+            h, w = win.original_image.shape[:2]
+
+            if w > 0 and h > 0:
+                # Obliczamy współczynniki skalowania dla szerokości i wysokości
+                ratio_w = canvas_width / w
+                ratio_h = canvas_height / h
+                
+                # Wybieramy mniejszy współczynnik (tryb "fit"),
+                # aby zachować proporcje i zmieścić cały obraz
+                win.zoom = min(ratio_w, ratio_h)
+                
+                # Aktualizujemy obraz z nowym, obliczonym zoomem
+                update_image()
+        
+        elif current_state == 'normal' and win.previous_state != 'normal':
+            print("minimalizacja")
+            win.zoom = 1.0
+            update_image()
+        
+        # Zapisujemy bieżący stan jako poprzedni dla następnego wywołania
+        win.previous_state = current_state
+
+    # Przypisanie funkcji do zdarzenia <Configure> okna 'win'
+    win.bind("<Configure>", on_resize_or_maximize)
+    # ----------------------------------------------------------
+
     update_image()
     # ----------------------------------------------------------
 

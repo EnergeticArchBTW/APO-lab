@@ -210,7 +210,7 @@ def cal_hist(okno):
     if lut is not None:
 
         #obliczanie grubości słupka (szerokość) / 256
-        bar_width = int(round(450 / 256))
+        bar_width = int(round(450 / 256)) #zakładam, że chcę skalować słupki do wys 450 px
 
         #okno.geometry("450x350") #szerokość 450 wysokość 350
         #dla monochromatycznych
