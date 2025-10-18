@@ -358,7 +358,10 @@ def calandshow_without_supersaturation_hist():
     
     else:
         #dzielenie obrazu kolorowego na kanały
-        b, g, r = cv2.split(image)
+        #b, g, r = cv2.split(image)
+        b = image[:, :, 0:1]
+        g = image[:, :, 1:2]
+        r = image[:, :, 2:3]
         r_stretched = cal_without_supersaturation_hist(r, lut_values[0])
         g_stretched = cal_without_supersaturation_hist(g, lut_values[1])
         b_stretched = cal_without_supersaturation_hist(b, lut_values[2])
@@ -437,7 +440,11 @@ def calandshow_with_supersaturation5_hist():
         image_stretched = cal_with_supersaturation5_hist(image, lut_values)
     else:
         # dzielenie obrazu kolorowego na kanały
-        b, g, r = cv2.split(image)
+        #b, g, r = cv2.split(image)
+        # Zamiast 0, użyj wycinka 0:1 (od indeksu 0 do 1, ale bez 1)
+        b = image[:, :, 0:1]
+        g = image[:, :, 1:2]
+        r = image[:, :, 2:3]
         r_stretched = cal_with_supersaturation5_hist(r, lut_values[0])
         g_stretched = cal_with_supersaturation5_hist(g, lut_values[1])
         b_stretched = cal_with_supersaturation5_hist(b, lut_values[2])
@@ -465,7 +472,7 @@ def calhistogram_equalization(lut, image):
     
     # KROK 3: Obliczenie całkowitej liczby pikseli w obrazie
     # (to jest wartość ostatniego elementu histogramu skumulowanego)
-    height, width = image.shape
+    height, width = image.shape[:2]
     total_pixels = height * width  # lub histogram_skumulowany[255]
     
     # KROK 4: Tworzenie tablicy przekodowań (LUT dla equlizacji)
@@ -520,7 +527,8 @@ def calhistogram_equalization(lut, image):
             
             # Przekodowujemy zgodnie z tablicą LUT
             # nowa wartość = lut_equalization[stara wartość]
-            new_value = lut_equalization[old_value]
+            #new_value = lut_equalization[old_value]
+            new_value = lut_equalization[int(old_value)]
             
             # Zapisujemy nową wartość w obrazie wynikowym
             equalized_image[y, x] = new_value
@@ -562,7 +570,10 @@ def histogram_equalization():
     if not lut_data["color"]:
         equalized_image = calhistogram_equalization(lut, image)
     else:
-        b, g, r = cv2.split(image)
+        #b, g, r = cv2.split(image)
+        b = image[:, :, 0:1]
+        g = image[:, :, 1:2]
+        r = image[:, :, 2:3]
         r_eq = calhistogram_equalization(lut[0], r)
         g_eq = calhistogram_equalization(lut[1], g)
         b_eq = calhistogram_equalization(lut[2], b)
