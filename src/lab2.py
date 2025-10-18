@@ -202,12 +202,13 @@ def add_images_without_saturation():
 
     images = select_images_window()
     print(images)
+    ilosc = len(images)
 
-    if not images or len(images) < 2:
+    if not images or ilosc < 2:
         messagebox.showerror("Błąd", "Potrzebne są co najmniej 2 obrazy!")
         return
     
-    if len(images) > 5:
+    if ilosc > 5:
         messagebox.showerror("Błąd", "Maksymalnie 5 obrazów!")
         return
     
@@ -217,12 +218,28 @@ def add_images_without_saturation():
         if not compare_images(first_img, img):
             messagebox.showerror("Błąd", f"Obraz {i+1} nie pasuje do pierwszego!")
             return
-    
+    """  
     # Dodawanie BEZ WYSYCENIA - arytmetyka NumPy zawija wartości (np. 200 + 100 = 44)
     result = images[0].copy()
     for img in images[1:]:
         # Operator '+' na tablicach NumPy (uint8) wykonuje dodawanie modulo 256
         result = result + img 
+    """
+
+    # Kompresja jasności: dzielenie każdego obrazu przez 'ilosc', a następnie sumowanie.
+    # 1. Tworzymy "płótno" na wynikową sumę. Musi być typu float,
+    #    aby móc przechowywać wartości ułamkowe.
+    #    Używamy np.float64 dla maksymalnej precyzji.
+    sum_images = np.zeros_like(images[0], dtype=np.float64)
+    # 2. Iterujemy przez WSZYSTKIE obrazy
+    for img in images:
+        # 3. Konwertujemy obraz na float, DZIELIMY przez liczbę obrazów
+        #    i dodajemy do naszej sumy.
+        sum_images += img.astype(np.float64) / ilosc
+    # 4. Na końcu, sum_images zawiera już obliczoną średnią.
+    #    Musimy ją tylko zaokrąglić do najbliższej liczby całkowitej
+    #    i przekonwertować z powrotem na typ uint8 (0-255).
+    result = np.round(sum_images).astype(np.uint8)
     
     show_image(result, f"without_sat[{globals_var.current_id}]")
     globals_var.current_id += 1
