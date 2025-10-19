@@ -4,6 +4,7 @@ import threading # do wielowątkowości
 from win_thread import win_thread
 from tkinter import Toplevel, Canvas #do okna z obrazem
 from tkinter import messagebox # do błędów
+import numpy as np # do operacji na tablicach
 from PIL import Image, ImageTk  # do konwersji obrazów do formatu Tkinter
 
 """ funkcje, które są najczęściej używane w różnych miejscach """
@@ -190,3 +191,58 @@ def new_file_name(path, middle_name):
     """
     stem, ext = path.stem, path.suffix
     return f"{stem}{middle_name}{ext}"
+
+def get_focused_image_data():
+    """Pobiera dane aktywnego obrazu (img_info, image). Zwraca (None, None) i pokazuje błąd, jeśli nie ma aktywnego okna.
+    przykładowe użycie:
+        img_info, image = get_focused_image_data()
+        if image is None:
+            return
+    """
+    if globals_var.current_window not in globals_var.opened_images:
+        messagebox.showerror("Błąd", "Brak aktywnego okna z obrazem.")
+        return None, None
+    
+    img_info = globals_var.opened_images[globals_var.current_window]
+    image = img_info["image"]
+    return img_info, image
+
+def get_focused_mono_image():
+    """Pobiera aktywny obraz i sprawdza, czy jest mono. Zwraca (img_info, image) lub (None, None) przy błędzie.
+    przykładowe użycie:
+        img_info, image = get_focused_mono_image()
+        if image is None:
+            return
+    """
+    img_info, image = get_focused_image_data() # Używamy funkcji wyżej
+    if image is None:
+        return None, None
+
+    if len(image.shape) != 2:
+        messagebox.showerror("Błąd", "Operacja działa tylko na obrazach monochromatycznych.")
+        return None, None
+        
+    return img_info, image
+
+def apply_per_channel(image, lut_data, single_channel_function):
+    """Aplikuje funkcję 'single_channel_function' na obrazie mono lub na każdym kanale obrazu kolorowego."""
+    
+    lut_values = lut_data["lut"]
+    
+    if lut_data["color"] == False:
+        # Obraz mono
+        return single_channel_function(image, lut_values)
+    else:
+        # Obraz kolorowy
+        # Dzielenie na kanały
+        b = image[:, :, 0:1]
+        g = image[:, :, 1:2]
+        r = image[:, :, 2:3]
+        
+        # 'single_channel_function' to np. cal_with_supersaturation5_hist
+        r_processed = single_channel_function(r, lut_values[0])
+        g_processed = single_channel_function(g, lut_values[1])
+        b_processed = single_channel_function(b, lut_values[2])
+
+        # składanie
+        return np.dstack((b_processed, g_processed, r_processed))

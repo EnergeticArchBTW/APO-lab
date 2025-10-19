@@ -351,22 +351,8 @@ def calandshow_without_supersaturation_hist():
     else:
         messagebox.showerror("Błąd", "Brak aktywnego okna z obrazem lub nieobsługiwany obraz.")
         return
-    
-    # sprawdzamy czy monochromatyczny
-    if lut["color"] == False:
-        image_stretched = cal_without_supersaturation_hist(image, lut_values)
-    
-    else:
-        #dzielenie obrazu kolorowego na kanały
-        #b, g, r = cv2.split(image)
-        b = image[:, :, 0:1]
-        g = image[:, :, 1:2]
-        r = image[:, :, 2:3]
-        r_stretched = cal_without_supersaturation_hist(r, lut_values[0])
-        g_stretched = cal_without_supersaturation_hist(g, lut_values[1])
-        b_stretched = cal_without_supersaturation_hist(b, lut_values[2])
 
-        image_stretched = np.dstack((b_stretched, g_stretched, r_stretched))
+    image_stretched = apply_per_channel(image, lut, cal_without_supersaturation_hist)
 
     title = new_file_name(Path(img_info["filename"]), "_without_supersaturation")
     show_image(image_stretched, title=title)
@@ -435,25 +421,12 @@ def calandshow_with_supersaturation5_hist():
         messagebox.showerror("Błąd", "Brak aktywnego okna z obrazem lub nieobsługiwany obraz.")
         return
     
-    # sprawdzamy czy monochromatyczny
-    if lut["color"] == False:
-        image_stretched = cal_with_supersaturation5_hist(image, lut_values)
-    else:
-        # dzielenie obrazu kolorowego na kanały
-        #b, g, r = cv2.split(image)
-        # Zamiast 0, użyj wycinka 0:1 (od indeksu 0 do 1, ale bez 1)
-        b = image[:, :, 0:1]
-        g = image[:, :, 1:2]
-        r = image[:, :, 2:3]
-        r_stretched = cal_with_supersaturation5_hist(r, lut_values[0])
-        g_stretched = cal_with_supersaturation5_hist(g, lut_values[1])
-        b_stretched = cal_with_supersaturation5_hist(b, lut_values[2])
-        image_stretched = np.dstack((b_stretched, g_stretched, r_stretched))
+    image_stretched = apply_per_channel(image, lut, cal_with_supersaturation5_hist)
     
     title = new_file_name(Path(img_info["filename"]), "_with_supersaturation5")
     show_image(image_stretched, title=title)
 
-def calhistogram_equalization(lut, image):
+def calhistogram_equalization(image, lut):
     """ funkcja liczy wyrównanie histogramu dla jednego kanału (monochromatycznego lub jednego kanału kolorowego)
     zwraca obraz po equalizacji"""
     # KROK 2: Tworzenie histogramu skumulowanego
@@ -548,40 +521,17 @@ def histogram_equalization():
     """
     
     # Sprawdzenie czy jest aktywne okno z obrazem
-    if globals_var.current_window not in globals_var.opened_images:
-        messagebox.showerror("Błąd", "Brak aktywnego okna z obrazem.")
+    img_info, image = get_focused_image_data()
+    if image is None:
         return
     
-    # Pobranie informacji o obrazie
-    img_info = globals_var.opened_images[globals_var.current_window]
-    image = img_info["image"]
-    
-    # KROK 1: Generacja tablicy LUT (histogram)
+    # Generacja tablicy LUT (histogram)
     lut_data = generate_lut()
-    """
-    if lut_data is None or lut_data["color"]:
-        messagebox.showerror("Błąd", "Nie udało się wygenerować LUT. Sprawdź czy obraz jest kolorowy.")
-        return
-    """
     
     # Pobieramy tablicę lut z wygenerowanych danych
     lut = lut_data["lut"]  # tablica 256 elementów: histogram[i] = liczba pikseli o wartości i
-    
-    if not lut_data["color"]:
-        equalized_image = calhistogram_equalization(lut, image)
-    else:
-        #b, g, r = cv2.split(image)
-        b = image[:, :, 0:1]
-        g = image[:, :, 1:2]
-        r = image[:, :, 2:3]
-        r_eq = calhistogram_equalization(lut[0], r)
-        g_eq = calhistogram_equalization(lut[1], g)
-        b_eq = calhistogram_equalization(lut[2], b)
-        equalized_image = np.dstack((b_eq, g_eq, r_eq))
-    
-    # KROK 6: Wyświetlenie wyrównanego obrazu
-    # Konwersja z odcieni szarości (1 kanał) do BGR (3 kanały) dla show_image
-    #equalized_image_bgr = cv2.cvtColor(equalized_image, cv2.COLOR_GRAY2BGR)
+
+    equalized_image = apply_per_channel(image, lut_data, calhistogram_equalization)
     
     # Wyświetlenie wyniku
     title = new_file_name(Path(img_info["filename"]), "_eq")
@@ -590,15 +540,8 @@ def histogram_equalization():
 def negation():
     """Negacja - wersja zoptymalizowana bez pętli."""
     
-    if globals_var.current_window not in globals_var.opened_images:
-        messagebox.showerror("Błąd", "Brak aktywnego okna z obrazem.")
-        return
-    
-    img_info = globals_var.opened_images[globals_var.current_window]
-    image = img_info["image"]
-    
-    if len(image.shape) != 2:
-        messagebox.showerror("Błąd", "Funkcja działa tylko dla obrazów monochromatycznych.")
+    img_info, image = get_focused_mono_image()
+    if image is None:
         return
     
     # Negacja całej tablicy naraz
@@ -611,16 +554,8 @@ def negation():
 
 def reduce_gray_levels():
     """Redukcja poziomów szarości przez powtórną kwantyzację."""
-    if globals_var.current_window not in globals_var.opened_images:
-        messagebox.showerror("Błąd", "Brak aktywnego okna z obrazem.")
-        return
-    
-    img_info = globals_var.opened_images[globals_var.current_window]
-    image = img_info["image"]
-    
-    # Sprawdź czy obraz jest monochromatyczny
-    if len(image.shape) != 2:
-        messagebox.showerror("Błąd", "Operacja działa tylko na obrazach monochromatycznych.")
+    img_info, image = get_focused_mono_image()
+    if image is None:
         return
     
     # Okno dialogowe do wprowadzenia liczby poziomów
