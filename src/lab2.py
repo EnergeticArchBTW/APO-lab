@@ -45,25 +45,12 @@ def select_images_window():
 
     # 2. Przygotowanie danych do wyświetlenia
     image_data = []
-    print("\n--- DEBUG: Rozpoczynam przygotowanie 'image_data' ---")
     
     for key, data in globals_var.opened_images.items():
         image_obj = data.get("image")
         data_id = data.get("id")
-        
-        # Dodatkowy debug, aby sprawdzić, co jest w 'image'
-        if image_obj is None:
-            print(f"  [UWAGA]: Obraz dla klucza {key} (id: {data_id}) ma wartość None.")
-        else:
-            # Sprawdzamy typ, na wypadek gdyby to był numpy
-            if hasattr(image_obj, 'shape'): 
-                print(f"  [OK]: Obraz dla klucza {key} (id: {data_id}) to tablica NumPy o kształcie {image_obj.shape}")
-            else:
-                print(f"  [OK]: Obraz dla klucza {key} (id: {data_id}) to obiekt typu {type(image_obj)}")
                 
         image_data.append((key, data.get("filename", "Brak Nazwy"), image_obj, data_id))
-    
-    print("--- DEBUG: Zakończono przygotowanie 'image_data' ---\n")
 
     if not image_data:
         messagebox.showinfo("Brak danych", "Brak danych obrazów do przetworzenia.")
@@ -89,63 +76,27 @@ def select_images_window():
     # Lista na finalnie wybrane obiekty zdjęć
     selected_images = []
 
-    # ----- POCZĄTEK DEBUGGINGU -----
-    print("\n--- DEBUG: START ---")
-    print("Aktualna zawartość globals_var.opened_images:")
-    if not globals_var.opened_images:
-        print("  Słownik jest PUSTY.")
-    else:
-        # Wypisujemy klucze (obiekty okien) i 'filename' dla identyfikacji
-        for okno_klucz, dane in globals_var.opened_images.items():
-            print(f"  Klucz (okno): {okno_klucz} -> Dane: {{'filename': {dane.get('filename')}, 'id': {dane.get('id')}}}")
-            
-    print("\nAktualna zawartość check_vars (klucz -> wartość zaznaczenia):")
-    if not check_vars:
-        print("  Słownik jest PUSTY.")
-    else:
-        for klucz, var in check_vars.items():
-            print(f"  Klucz (nazwa?): {klucz} -> Wartość Vara: {var.get()}")
-    print("--- DEBUG: Rozpoczynam pętlę ---\n")
-    # ----- KONIEC DEBUGGINGU -----
-
     def on_select_button_click():
         """Obsługuje kliknięcie przycisku 'Wybierz'."""
         nonlocal selected_images
-        selected_images.clear() 
-
-        print(check_vars)
+        selected_images.clear()
 
         for checked_id, var in check_vars.items():
         
-            print(f"Sprawdzam ID: {checked_id}, Wartość (zaznaczony?): {var.get()}")
-        
             if var.get() == 1:  # Jeśli Checkbutton jest zaznaczony
-                print(f"  [ZAZNACZONO]: ID: {checked_id}")
             
                 found_image = None
             
                 for okno_key, data_dict in globals_var.opened_images.items():
                     if data_dict.get("id") == checked_id:
-                        print(f"    ZNALAZŁEM! ID {checked_id} pasuje do okna {okno_key}")
                         found_image = data_dict.get("image")
                         break 
-
-                # --- KRYTYCZNA POPRAWKA JEST TUTAJ ---
+                
                 # Musimy użyć 'is not None', aby poprawnie obsługiwać
-                # tablice NumPy (które powodowały 'ValueError') ORAZ wartość None.
+                # tablice NumPy
                 
                 if found_image is not None: 
-                    print("    Sukces: Dodaję obraz do listy.")
                     selected_images.append(found_image)
-                else:
-                    # Ten błąd oznacza, że data_dict.get("image") zwróciło None.
-                    print(f"    BŁĄD: Obiekt obrazu znaleziony dla ID {checked_id} ma wartość 'None'. Nie można dodać.")
-
-        print(f"\nOstatecznie wybrano obrazów: {len(selected_images)}")
-
-        print("\n--- DEBUG: Pętla zakończona ---")
-        print(f"Ostateczna liczba wybranych obrazów: {len(selected_images)}")
-        print("--- DEBUG: KONIEC ---")
         
         # Zamykamy okno i zwalniamy focus
         selection_window.grab_release()
@@ -201,7 +152,6 @@ def add_images_without_saturation():
     """
 
     images = select_images_window()
-    print(images)
     ilosc = len(images)
 
     if not images or ilosc < 2:
@@ -218,13 +168,6 @@ def add_images_without_saturation():
         if not compare_images(first_img, img):
             messagebox.showerror("Błąd", f"Obraz {i+1} nie pasuje do pierwszego!")
             return
-    """  
-    # Dodawanie BEZ WYSYCENIA - arytmetyka NumPy zawija wartości (np. 200 + 100 = 44)
-    result = images[0].copy()
-    for img in images[1:]:
-        # Operator '+' na tablicach NumPy (uint8) wykonuje dodawanie modulo 256
-        result = result + img 
-    """
 
     # Kompresja jasności: dzielenie każdego obrazu przez 'ilosc', a następnie sumowanie.
     # 1. Tworzymy "płótno" na wynikową sumę. Musi być typu float,

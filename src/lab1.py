@@ -74,16 +74,6 @@ def duplicate_focused_image():
     else:
         messagebox.showerror("Błąd", "Brak aktywnego okna z obrazem do duplikacji.")
 
-# def show_focused_number():
-#     """Wyświetla ID aktualnie aktywnego okna."""
-#     while True:
-#         if current_window in opened_images:
-#             img_info = opened_images[current_window]
-#             print(f"Aktualne okno ID: {img_info['id']}, Nazwa pliku: {img_info['filename']}")
-#         else:
-#             print("Brak aktywnego okna z obrazem.")
-#         time.sleep(5)  # co 5 sekund
-
 def show_lut():
     """Generuje i wyświetla tablicę LUT dla aktualnie sfocusowanego obrazu."""
     lut = generate_lut()
