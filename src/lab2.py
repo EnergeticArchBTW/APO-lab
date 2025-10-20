@@ -490,3 +490,102 @@ def subtract_images_absolute():
     
     # 4. Wyświetlenie wyniku
     show_image(result, f"abs_diff[{globals_var.current_id}]")
+
+def convert_grayscale_to_binary_mask():
+    """
+    Pobiera sfocusowany obraz (8-bit w skali szarości) i konwertuje go
+    na maskę binarną (0/255) na podstawie progu podanego przez użytkownika.
+    zakłądam że threshold zawsze jest 128.
+    """
+    
+    # 1. Pobranie aktywnego obrazu i walidacja
+    img_info, image = get_focused_image_data()
+    if image is None:
+        return # Błąd został już wyświetlony przez get_focused_image_data
+
+    # 2. Sprawdzenie, czy obraz jest monochromatyczny
+    if len(image.shape) != 2:
+        messagebox.showerror("Błąd", "Operacja działa tylko na obrazach monochromatycznych (w skali szarości).")
+        return
+        
+    # 3. wartość progu
+    threshold_value = 128
+        
+    # 4. ALGORYTM: Progowanie (Thresholding)
+    # Funkcja cv2.threshold zwraca próg oraz obraz
+    _ , binary_mask = cv2.threshold(image, threshold_value, 255, cv2.THRESH_BINARY)
+    
+    # 5. Wyświetlenie wyniku
+    title = new_file_name(Path(img_info["filename"]), f"_binary_mask_{threshold_value}")
+    show_image(binary_mask, title=title)
+
+def convert_binary_to_grayscale_mask():
+    """
+    Pobiera sfocusowaną maskę binarną i konwertuje ją na maskę 8-bitową
+    (w skali szarości) poprzez rozmycie krawędzi (tzw. "feathering").
+    """
+
+    # 1. Pobranie aktywnego obrazu i walidacja
+    img_info, image = get_focused_image_data()
+    if image is None:
+        return
+
+    # 2. Sprawdzenie, czy obraz jest monochromatyczny
+    if len(image.shape) != 2:
+        messagebox.showerror("Błąd", "Operacja działa tylko na obrazach monochromatycznych (binarnych).")
+        return
+        
+    # 3. Zapytanie użytkownika o siłę rozmycia
+    blur_strength = get_integer_input(globals_var.root, "Podaj siłę rozmycia (Im wyższa, tym miększe przejście.):")
+    
+    if blur_strength is None: # Użytkownik kliknął "Anuluj"
+        return
+        
+    # 4. ALGORYTM: Rozmycie Gaussa
+    # Upewniamy się, że wartość jest nieparzysta (wymóg Gaussa)
+    if blur_strength % 2 == 0:
+        blur_strength += 1
+        
+    # Stosujemy silne rozmycie, aby zamienić ostre krawędzie w gradient
+    gray_mask = cv2.GaussianBlur(image, (blur_strength, blur_strength), 0)
+    
+    # 5. Wyświetlenie wyniku
+    title = new_file_name(Path(img_info["filename"]), f"_gray_mask_{blur_strength}")
+    show_image(gray_mask, title=title)
+
+def not_logic():
+    """
+    Wykonuje operację logiczną NOT (negację bitową) na aktywnym obrazie,
+    zgodnie z definicją ze slajdu (NOT(1)=0, NOT(0)=1).
+    Wymagany jest obraz monochromatyczny lub binarny.
+    """
+    
+    # 1. Operacja NOT jest JEDNOARGUMENTOWA.
+    # Działamy na aktywnym (sfocusowanym) obrazie.
+    img_info, image = get_focused_image_data()
+    if image is None:
+        return
+    
+    # 3. Walidacja (dla obrazów monochromatycznych i binarnych)
+    if len(image.shape) == 3:
+        messagebox.showerror("Błąd", "Operacja NOT działa tylko na obrazach monochromatycznych lub binarnych.")
+        return
+
+    # 4. ALGORYTM: Wykonanie operacji NOT (zgodnie ze slajdem)
+    #
+    # Funkcja cv2.bitwise_not() idealnie realizuje definicję ze slajdu.
+    # Odwraca każdy bit w każdym pikselu obrazu.
+    #
+    # Na przykład dla obrazu 8-bitowego (uint8):
+    # Piksel 0 (bity 00000000) -> NOT -> 255 (bity 11111111)
+    # Piksel 255 (bity 11111111) -> NOT -> 0 (bity 00000000)
+    # Piksel 100 (bity 01100100) -> NOT -> 155 (bity 10011011)
+    
+    result_image = cv2.bitwise_not(image)
+
+    # 5. Wyświetlenie wyniku
+    title = new_file_name(Path(img_info["filename"]), "_NOT")
+    show_image(result_image, title=title)
+
+def and_logic():
+    """"""

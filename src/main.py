@@ -15,7 +15,8 @@ class MainMenu(Tk):
             # lab 2
             add_images_without_saturation_callback, add_images_with_saturation_callback, add_number_with_stauration_callback,
             add_number_without_stauration_callback, divide_number_with_stauration_callback, divide_number_without_stauration_callback,
-            multiply_number_with_stauration_callback, multiply_number_without_stauration_callback, subtract_images_absolute):
+            multiply_number_with_stauration_callback, multiply_number_without_stauration_callback, subtract_images_absolute_callback,
+            convert_grayscale_to_binary_mask_callback, convert_binary_to_grayscale_mask_callback, not_logic_callback):
         super().__init__()
         self.title("APO laby - Michał Rymkiewicz")
         self.minsize(400, 200)  # minimalna szerokość: 400px, wysokość: 200px
@@ -53,7 +54,10 @@ class MainMenu(Tk):
         file_menu2.add_command(label="Dzielenie liczby całkowitej do obrazu bez saturacji", command=divide_number_without_stauration_callback)
         file_menu2.add_command(label="Mnożenie liczby całkowitej do obrazu z saturacją", command=multiply_number_with_stauration_callback)
         file_menu2.add_command(label="Mnożenie liczby całkowitej do obrazu bez saturacji", command=multiply_number_without_stauration_callback)
-        file_menu2.add_command(label="różnica bezwględna obrazów", command=subtract_images_absolute)
+        file_menu2.add_command(label="różnica bezwględna obrazów", command=subtract_images_absolute_callback)
+        file_menu2.add_command(label="z 8-bit na binarną", command=convert_grayscale_to_binary_mask_callback)
+        file_menu2.add_command(label="z binarnej na 8-bit", command=convert_binary_to_grayscale_mask_callback)
+        file_menu2.add_command(label="NOT", command=not_logic_callback)
 
 if __name__ == "__main__":
     # Tworzymy folder outputs, jeśli nie istnieje
@@ -65,5 +69,6 @@ if __name__ == "__main__":
         calandshow_with_supersaturation5_hist, histogram_equalization, negation, reduce_gray_levels, binary_threshold, threshold_preserve_gray,
         # lab 2
         add_images_without_saturation, add_images_with_saturation, add_number_with_stauration, add_number_without_stauration, divide_number_with_stauration,
-        divide_number_without_stauration, multiply_number_with_stauration, multiply_number_without_stauration, subtract_images_absolute)
+        divide_number_without_stauration, multiply_number_with_stauration, multiply_number_without_stauration, subtract_images_absolute, convert_grayscale_to_binary_mask, 
+        convert_binary_to_grayscale_mask, not_logic)
     globals_var.root.mainloop()
