@@ -145,7 +145,6 @@ def select_images_window():
     # 7. Zwrócenie wyniku po zamknięciu okna
     return selected_images
 
-
 def add_images_without_saturation():
     """funkcja dodająca od 2 do 5 obrazów BEZ WYSYCENIA (z zawijaniem) z GUI
     wyświetla wynikowy obraz lub nic nie robi w przypadku błędu
@@ -587,5 +586,56 @@ def not_logic():
     title = new_file_name(Path(img_info["filename"]), "_NOT")
     show_image(result_image, title=title)
 
+def and_or_xor_check(images):
+    """funkcja zawierająca powtarzające sprawdzenia dla and, or, xor"""
+    if len(images) !=2:
+        messagebox.showerror("Błąd", "Musisz wybrać dokładnie 2 obrazy")
+        return False
+
+    for image in images:
+        if len(image.shape) == 3:
+            messagebox.showerror("Błąd", "Operacja działa tylko na obrazach monochromatycznych lub binarnych.")
+            return False
+    
+    if compare_images(images[0], images[1]) == False:
+        return False
+    return True
+
 def and_logic():
-    """"""
+    """operacja AND jednopunktowa dwuargumentowa wyświetla przetworzony obraz"""
+    images = select_images_window()
+    
+    if and_or_xor_check(images) == False:
+        return
+    
+    # Ta funkcja realizuje logikę ze slajdu (1 AND 1=1, 1 AND 0=0, itd.)
+    # dla każdego bitu w odpowiadających sobie pikselach.
+    result_image = cv2.bitwise_and(images[0], images[1])
+
+    show_image(result_image, f"and_logic[{globals_var.current_id}]")
+
+def or_logic():
+    """operacja OR jednopunktowa dwuargumentowa wyświetla przetworzony obraz"""
+    images = select_images_window()
+
+    if and_or_xor_check(images) == False:
+        return
+    
+    # Ta funkcja realizuje logikę ze slajdu
+    # dla każdego bitu w odpowiadających sobie pikselach.
+    result_image = cv2.bitwise_or(images[0], images[1])
+    
+    show_image(result_image, f"or_logic[{globals_var.current_id}]")
+
+def xor_logic():
+    """operacja XOR jednopunktowa dwuargumentowa wyświetla przetworzony obraz"""
+    images = select_images_window()
+
+    if and_or_xor_check(images) == False:
+        return
+    
+    # Ta funkcja realizuje logikę ze slajdu
+    # dla każdego bitu w odpowiadających sobie pikselach.
+    result_image = cv2.bitwise_xor(images[0], images[1])
+    
+    show_image(result_image, f"xor_logic[{globals_var.current_id}]")
