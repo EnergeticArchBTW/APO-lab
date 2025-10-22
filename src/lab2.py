@@ -1328,3 +1328,56 @@ def run_median_filter():
     except Exception as e:
         # Obsługa błędów, np. brak pamięci lub błąd OpenCV
         messagebox.showerror("Błąd filtru medianowego", f"Nie udało się zastosować filtru:\n{e}")
+
+def run_canny_detector():
+    """
+    Zadanie 5: Implementacja detekcji krawędzi operatorem Canny'ego.
+    
+    Wersja zmodyfikowana:
+    1. Pyta o próg minimalny (wymagany).
+    2. Pyta o próg maksymalny (opcjonalny).
+    3. Jeśli użytkownik anuluje drugie okno, próg maksymalny = 3 * minimalny.
+    """
+    
+    # 1. Pobierz aktywny obraz
+    img_info, image = get_focused_image_data()
+    if image is None:
+        return
+
+    # 2. Walidacja (Canny działa tylko na szaro-odcieniowych)
+    if len(image.shape) != 2:
+        messagebox.showerror("Błąd", "Operator Canny'ego działa tylko na obrazach monochromatycznych (szaro-odcieniowych).")
+        return
+
+    # 3. Pobierz dolny próg (Threshold1) - WYMAGANY
+    threshold1 = get_integer_input(globals_var.root, "Zadanie 5: Operator Canny'ego (1/2)", "Podaj dolny próg (Threshold 1):", 50)
+    
+    if threshold1 is None:
+        print("Operacja Canny'ego anulowana.")
+        return # Użytkownik kliknął "Anuluj"
+
+    # 4. Pobierz górny próg (Threshold2) - OPCJONALNY
+    threshold2 = get_integer_input(globals_var.root, "Zadanie 5: Operator Canny'ego (2/2)", "Podaj górny próg (Threshold 2):\n\n(Kliknij 'Anuluj', aby automatycznie ustawić 3 x próg dolny)")
+
+    # 5. Ustaw wartość Threshold2
+    if threshold2 is None:
+        # Użytkownik "nie musiał" podawać - kliknął Anuluj.
+        # Stosujemy zasadę z wykładu.
+        threshold2 = threshold1 * 3
+        # Zabezpieczenie
+        if threshold2 > 255:
+            threshold2 = 255
+        
+    # 6. Zastosuj lekkie wygładzenie (wymóg Canny'ego)
+    blurred_image = cv2.GaussianBlur(image, (3, 3), 0)
+
+    try:
+        # 7. Wywołaj procedurę OpenCV z ustalonymi progami
+        edges = cv2.Canny(blurred_image, threshold1, threshold2)
+        
+        # 8. Wyświetl wynik
+        title = new_file_name(Path(img_info["filename"]), f"_canny_{threshold1}-{threshold2}[{globals_var.current_id}]")
+        show_image(edges, title=title)
+        
+    except Exception as e:
+        messagebox.showerror("Błąd Canny'ego", f"Nie udało się zastosować operatora:\n{e}")

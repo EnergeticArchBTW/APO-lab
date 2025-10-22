@@ -18,7 +18,8 @@ class MainMenu(Tk):
             multiply_number_with_stauration_callback, multiply_number_without_stauration_callback, subtract_images_absolute_callback,
             convert_grayscale_to_binary_mask_callback, convert_binary_to_grayscale_mask_callback, not_logic_callback,
             and_logic_callback, or_logic_callback, xor_logic_callback, show_filter_selection_window_callback,
-            run_gaussian_filter_callback, run_sobel_operator_callback, run_median_filter_callback):
+            run_gaussian_filter_callback, run_sobel_operator_callback, run_median_filter_callback,
+            run_canny_detector_callback):
         super().__init__()
         self.title("APO laby - Michał Rymkiewicz")
         self.minsize(400, 200)  # minimalna szerokość: 400px, wysokość: 200px
@@ -67,6 +68,7 @@ class MainMenu(Tk):
         file_menu2.add_command(label="filtr gaussowski", command=run_gaussian_filter_callback)
         file_menu2.add_command(label="detekcja krawędzi operacjami sobela", command=run_sobel_operator_callback)
         file_menu2.add_command(label="filtracja medianowa", command=run_median_filter_callback)
+        file_menu2.add_command(label="detekcja krawędzi operatorem Canyego", command=run_canny_detector_callback)
 
 if __name__ == "__main__":
     # Tworzymy folder outputs, jeśli nie istnieje
@@ -80,6 +82,6 @@ if __name__ == "__main__":
         add_images_without_saturation, add_images_with_saturation, add_number_with_stauration, add_number_without_stauration, divide_number_with_stauration,
         divide_number_without_stauration, multiply_number_with_stauration, multiply_number_without_stauration, subtract_images_absolute, convert_grayscale_to_binary_mask, 
         convert_binary_to_grayscale_mask, not_logic, and_logic, or_logic, xor_logic, show_filter_selection_window, run_gaussian_filter, run_sobel_operator,
-        run_median_filter)
+        run_median_filter, run_canny_detector)
 
     globals_var.root.mainloop()
