@@ -310,7 +310,7 @@ def operation_on_scalar(image, operation, value, saturation=True):
 
     return result
 
-def get_integer_input(root, title="Podaj liczbę"):
+def get_integer_input(root, title="Podaj liczbę", inside="Wprowadź wartość:", init=0, min=0, max=255):
     """
     Wyświetla proste, modalne okno dialogowe proszące o liczbę całkowitą.
     Funkcja czeka na odpowiedź użytkownika.
@@ -324,8 +324,9 @@ def get_integer_input(root, title="Podaj liczbę"):
     
     value = simpledialog.askinteger(
         title,  # Tytuł okna
-        "Wprowadź wartość:",  # Tekst wewnątrz okna (prompt)
-        parent=root  # Okno nadrzędne (dzięki temu jest modalne)
+        inside,  # Tekst wewnątrz okna (prompt)
+        parent=root,  # Okno nadrzędne (dzięki temu jest modalne)
+        initialvalue=init, minvalue=min, maxvalue=max
     )
     
     return value
@@ -639,3 +640,595 @@ def xor_logic():
     result_image = cv2.bitwise_xor(images[0], images[1])
     
     show_image(result_image, f"xor_logic[{globals_var.current_id}]")
+
+# Zad 3
+
+def apply_opencv_filter(image, kernel, border_type, border_value=0):
+    """
+    Uniwersalna funkcja do filtrowania obrazu.
+    
+    Obsługuje BORDER_REFLECT bezpośrednio przez filter2D.
+    Obsługuje BORDER_CONSTANT (z wartością 'n') przez ręczne dodanie
+    ramki (copyMakeBorder), filtrowanie i przycięcie wyniku.
+
+    Args:
+        image (np.array): Obraz wejściowy.
+        kernel (np.array): Maska (kernel) splotu (np. z globals_var).
+        border_type (int): Typ ramki z OpenCV (np. cv2.BORDER_CONSTANT).
+        border_value (int): Wartość do użycia, jeśli border_type to BORDER_CONSTANT[cite: 87, 96].
+    
+    Returns:
+        np.array: Obraz po filtracji lub None w przypadku błędu.
+    """
+    
+    try:
+        result_image = None
+        
+        if border_type == cv2.BORDER_CONSTANT:
+            # PRZYPADEK 1: Użytkownik chce stałą wartość 'n'
+            # cv2.filter2D nie przyjmuje borderValue, musimy to zrobić ręcznie.
+            
+            # Zakładamy maskę 3x3, więc potrzebujemy 1px ramki
+            pad_size = 1 
+            
+            # 1. Stwórz ręcznie obraz z ramką o wartości 'border_value'
+            padded_image = cv2.copyMakeBorder(
+                image, 
+                pad_size, pad_size, pad_size, pad_size, 
+                cv2.BORDER_CONSTANT, 
+                value=border_value  # <-- cv2.copyMakeBorder AKCEPTUJE tę wartość
+            )
+            
+            # 2. Filtruj obraz z ramką. Użyj BORDER_ISOLATED,
+            #    aby filtr nie próbował "patrzeć" poza ramkę, którą już dodaliśmy.
+            filtered_padded = cv2.filter2D(
+                src=padded_image, 
+                ddepth=-1, 
+                kernel=kernel,
+                borderType=cv2.BORDER_ISOLATED 
+            )
+            
+            # 3. Wytnij środek (usuń ramkę), aby wrócić do oryginalnego rozmiaru
+            h, w = image.shape[:2]
+            result_image = filtered_padded[pad_size : pad_size + h, pad_size : pad_size + w]
+
+        else:
+            # PRZYPADEK 2: Inne typy brzegów (np. BORDER_REFLECT)
+            # Wywołujemy funkcję w prosty sposób, BEZ 'borderValue'
+            result_image = cv2.filter2D(
+                src=image, 
+                ddepth=-1, 
+                kernel=kernel, 
+                borderType=border_type
+            )
+            
+        return result_image
+        
+    except cv2.error as e:
+        messagebox.showerror("Błąd OpenCV", f"Błąd podczas operacji filtrowania:\n{e}")
+        return None
+
+def apply_custom_border_filter(image, kernel, value_n):
+    """
+    Stosuje filtr (konwolucję) i nadpisuje 1-pikselową ramkę wartością stałą 'value_n' 
+    *po* zakończeniu obliczeń.
+    
+    Jest to implementacja niestandardowej obsługi brzegu: 
+    "wypełnienie wyniku wybraną wartością stałą n".
+    
+    Używa apply_opencv_filter do obliczenia wnętrza obrazu.
+
+    Args:
+        image (np.array): Obraz wejściowy.
+        kernel (np.array): Maska (kernel) splotu.
+        value_n (int): Wartość stała (0-255) do wypełnienia ramki.
+
+    Returns:
+        np.array: Obraz po filtracji z nadpisaną ramką lub None w przypadku błędu.
+    """
+    
+    # 1. Wykonujemy konwolucję używając funkcji z Kroku 2.
+    #    Wybieramy cv2.BORDER_REFLECT jako domyślny sposób obliczenia
+    #    pikseli brzegowych, zanim je nadpiszemy.
+    #    To najlepsze podejście, aby uniknąć artefaktów.
+    
+    # --- UŻYCIE IMPLEMENTACJI POPRZEDNIEJ FUNKCJI ---
+    filtered_image = apply_opencv_filter(image, kernel, cv2.BORDER_REFLECT)
+    
+    if filtered_image is None:
+        # Błąd został już zgłoszony w apply_opencv_filter
+        return None
+
+    # 2. Ręcznie nadpisujemy ramkę 1px wartością 'value_n'
+    #    Wykład precyzował, że ta operacja ma nastąpić na obrazie wynikowym.
+    
+    # Tworzymy kopię, aby nie modyfikować oryginalnych danych w locie
+    result_image = filtered_image.copy()
+    
+    # Zabezpieczamy wartość, aby pasowała do typu obrazu (np. uint8)
+    safe_value = np.clip(value_n, 0, 255).astype(image.dtype)
+
+    try:
+        # Górna ramka
+        result_image[0, :] = safe_value
+        # Dolna ramka
+        result_image[-1, :] = safe_value
+        # Lewa ramka
+        result_image[:, 0] = safe_value
+        # Prawa ramka
+        result_image[:, -1] = safe_value
+        
+        return result_image
+
+    except Exception as e:
+        messagebox.showerror("Błąd ramki", f"Nie udało się nadpisać ramki obrazu:\n{e}")
+        return None
+    
+def get_border_options():
+    """
+    Wyświetla modalne okno dialogowe do wyboru trybu uzupełniania brzegów.
+    
+    Pyta użytkownika o 3 opcje, a jeśli to konieczne, pyta również 
+    o wartość stałej 'n'.
+    
+    [cite_start]Zgodnie z wykładem[cite: 86, 87, 94]:
+    1. BORDER_REFLECT
+    2. BORDER_CONSTANT (OpenCV)
+    3. Wypełnienie ramki wyniku stałą (Niestandardowe)
+
+    Returns:
+        dict: Słownik z wyborem, np. {"mode": "REFLECT", "value": 0}
+              lub {"mode": "CONSTANT", "value": 128},
+              lub None, jeśli użytkownik anulował.
+    """
+    
+    # Używamy prostego Toplevel, jak wspomniano w poleceniu (przez globals_var.root)
+    dialog = Toplevel(globals_var.root)
+    dialog.title("Wybierz Opcje Brzegów")
+    
+    # --- Zmienne do przechowywania wyników ---
+    # Używamy słownika, aby łatwo go zwrócić
+    result = {"mode": None, "value": 0}
+    
+    # Zmienna Tkinter do śledzenia wyboru radio
+    choice_var = tk.StringVar(value="REFLECT")
+
+    # --- GUI ---
+    frame = ttk.Frame(dialog, padding="10")
+    frame.pack()
+    
+    ttk.Label(frame, text="Wybierz sposób uzupełnienia marginesów:").pack(anchor='w', pady=5)
+
+    # [cite_start]Opcje zgodne z zadaniem i wykładem [cite: 86, 87, 94, 95]
+    ttk.Radiobutton(frame, text="Odbicie lustrzane (BORDER_REFLECT)", 
+                    variable=choice_var, value="REFLECT").pack(anchor='w')
+                    
+    ttk.Radiobutton(frame, text="Stała wartość OpenCV (BORDER_CONSTANT)", 
+                    variable=choice_var, value="CONSTANT").pack(anchor='w')
+                    
+    ttk.Radiobutton(frame, text="Wypełnij ramkę wyniku stałą 'n' (Niestandardowe)", 
+                    variable=choice_var, value="CUSTOM_BORDER").pack(anchor='w')
+
+    # --- Przyciski OK / Anuluj ---
+    def on_ok():
+        mode = choice_var.get()
+        value_n = 0
+        
+        # [cite_start]Zapytaj o wartość 'n' TYLKO, gdy jest potrzebna [cite: 86]
+        if mode in ["CONSTANT", "CUSTOM_BORDER"]:
+            # Ważne: ten dialog jest "dzieckiem" okna 'dialog'
+            get_integer_input(dialog, "Wartość stałej 'n'", "Podaj wartość stałą 'n' (0-255):")
+            
+            if value_n is None:
+                # Użytkownik anulował wpisywanie liczby - traktujemy to jak "Anuluj"
+                result["mode"] = None # Sygnalizuje anulowanie
+                dialog.destroy()
+                return
+
+        # Zapisz poprawne wyniki
+        result["mode"] = mode
+        result["value"] = value_n
+        dialog.destroy()
+
+    def on_cancel():
+        result["mode"] = None # Sygnalizuje anulowanie
+        dialog.destroy()
+
+    # Ramka na przyciski
+    button_frame = ttk.Frame(frame)
+    button_frame.pack(pady=(15, 5), fill='x')
+    
+    ttk.Button(button_frame, text="OK", command=on_ok).pack(side='right', padx=5)
+    ttk.Button(button_frame, text="Anuluj", command=on_cancel).pack(side='right')
+    
+    dialog.protocol("WM_DELETE_WINDOW", on_cancel) # Obsługa 'X'
+
+    # --- Logika modalna (blokująca) ---
+    dialog.transient(globals_var.root) # Trzymaj na wierzchu
+    dialog.grab_set()                  # Zablokuj inne okna
+    globals_var.root.wait_window(dialog) # Czekaj, aż okno 'dialog' zostanie zniszczone
+
+    # Zwróć wynik (albo słownik, albo None)
+    return result if result["mode"] is not None else None
+
+def run_generic_filter(kernel, filter_name_suffix):
+    """
+    Funkcja-Wrapper: Pobiera aktywny obraz, pyta o opcje brzegów,
+    stosuje wybrany filtr (kernel) i wyświetla wynik.
+    
+    Obsługuje filtry wygładzające, wyostrzające i kierunkowe Prewitta,
+    które używają ogólnej funkcji filter2D.
+
+    Params:
+        kernel: zmienna kernela z globals_var
+        filter_name_suffix: nazwa tego filtru
+    """
+    
+    # 1. Pobierz aktywny obraz (użycie twojej funkcji)
+    img_info, image = get_focused_image_data()
+    if image is None:
+        return # Błąd został już wyświetlony
+
+    # [cite_start]2. Walidacja (zgodnie z wykładem [cite: 5, 16])
+    if len(image.shape) != 2:
+        messagebox.showerror("Błąd", "Operacje sąsiedztwa działają tylko na obrazach monochromatycznych (jednokanałowych).")
+        return
+
+    # 3. Pobierz opcje brzegów od użytkownika (Krok 4)
+    options = get_border_options()
+    if options is None:
+        print("Operacja filtrowania anulowana przez użytkownika.")
+        return # Użytkownik kliknął "Anuluj"
+
+    # 4. Wykonaj filtrowanie na podstawie wyboru
+    
+    result_image = None
+    border_mode = options["mode"]
+    border_value = options.get("value", 0) # Bezpieczne pobranie wartości
+
+    if border_mode == "REFLECT":
+        # Użyj funkcji z Kroku 2
+        result_image = apply_opencv_filter(image, kernel, cv2.BORDER_REFLECT)
+        
+    elif border_mode == "CONSTANT":
+        # Użyj funkcji z Kroku 2
+        result_image = apply_opencv_filter(image, kernel, cv2.BORDER_CONSTANT, border_value)
+        
+    elif border_mode == "CUSTOM_BORDER":
+        # Użyj funkcji z Kroku 3
+        result_image = apply_custom_border_filter(image, kernel, border_value)
+
+    # 5. Wyświetl wynik
+    if result_image is not None:
+        # Wygeneruj nową nazwę
+        title = new_file_name(Path(img_info["filename"]), f"_{filter_name_suffix}[{globals_var.current_id}]")
+        
+        # Użyj twojej funkcji
+        show_image(result_image, title=title)
+
+# Te funkcje są "końcówkami" podłączanymi bezpośrednio do menu GUI.
+
+# 1. Wygładzanie liniowe
+
+def menu_smooth_avg():
+    """Wywołuje filtr uśredniający (wszystkie wagi 1/9)."""
+    print("Wybrano: Wygładzanie uśredniające")
+    run_generic_filter(globals_var.KERNEL_AVG, "smooth_avg")
+
+def menu_smooth_weighted():
+    """
+    Wywołuje filtr uśredniający ważony.
+    Zgodnie z wykładem jest to filtr "krzyż".
+    """
+    print("Wybrano: Wygładzanie ważone (krzyż)")
+    run_generic_filter(globals_var.KERNEL_WEIGHTED_AVG, "smooth_weighted")
+
+# 2. Wyostrzanie liniowe (Laplasjany)
+
+def menu_sharpen_lap1():
+    """Wywołuje pierwszą maskę laplasjanową."""
+    print("Wybrano: Wyostrzanie - Laplasjan 1")
+    run_generic_filter(globals_var.KERNEL_LAPLACIAN_1, "sharpen_lap1")
+
+def menu_sharpen_lap2():
+    """Wywołuje drugą maskę laplasjanową."""
+    print("Wybrano: Wyostrzanie - Laplasjan 2")
+    run_generic_filter(globals_var.KERNEL_LAPLACIAN_2, "sharpen_lap2")
+
+def menu_sharpen_lap3():
+    """Wywołuje trzecią maskę laplasjanową."""
+    print("Wybrano: Wyostrzanie - Laplasjan 3")
+    run_generic_filter(globals_var.KERNEL_LAPLACIAN_3, "sharpen_lap3")
+
+# 3. Kierunkowa detekcja krawędzi (Prewitt)
+
+def menu_prewitt_e():
+    """Detekcja krawędzi Prewitta - kierunek Wschód (E)."""
+    print("Wybrano: Prewitt Kierunek E")
+    run_generic_filter(globals_var.KERNEL_PREWITT_E, "prewitt_E")
+
+def menu_prewitt_ne():
+    """Detekcja krawędzi Prewitta - kierunek Północny-Wschód (NE)."""
+    print("Wybrano: Prewitt Kierunek NE")
+    run_generic_filter(globals_var.KERNEL_PREWITT_NE, "prewitt_NE")
+
+def menu_prewitt_n():
+    """Detekcja krawędzi Prewitta - kierunek Północ (N)."""
+    print("Wybrano: Prewitt Kierunek N")
+    run_generic_filter(globals_var.KERNEL_PREWITT_N, "prewitt_N")
+
+def menu_prewitt_nw():
+    """Detekcja krawędzi Prewitta - kierunek Północny-Zachód (NW)."""
+    print("Wybrano: Prewitt Kierunek NW")
+    run_generic_filter(globals_var.KERNEL_PREWITT_NW, "prewitt_NW")
+
+def menu_prewitt_w():
+    """Detekcja krawędzi Prewitta - kierunek Zachód (W)."""
+    print("Wybrano: Prewitt Kierunek W")
+    run_generic_filter(globals_var.KERNEL_PREWITT_W, "prewitt_W")
+
+def menu_prewitt_sw():
+    """Detekcja krawędzi Prewitta - kierunek Południowy-Zachód (SW)."""
+    print("Wybrano: Prewitt Kierunek SW")
+    run_generic_filter(globals_var.KERNEL_PREWITT_SW, "prewitt_SW")
+
+def menu_prewitt_s():
+    """Detekcja krawędzi Prewitta - kierunek Południe (S)."""
+    print("Wybrano: Prewitt Kierunek S")
+    run_generic_filter(globals_var.KERNEL_PREWITT_S, "prewitt_S")
+
+def menu_prewitt_se():
+    """Detekcja krawędzi Prewitta - kierunek Południowy-Wschód (SE)."""
+    print("Wybrano: Prewitt Kierunek SE")
+    run_generic_filter(globals_var.KERNEL_PREWITT_SE, "prewitt_SE")
+
+def show_filter_selection_window():
+    """
+    Wyświetla proste okno do wyboru filtra
+    z podglądem maski 3x3.
+    Używa FILTER_MAP z globals_var.
+    """
+    
+    # 1. Stwórz okno
+    win = Toplevel(globals_var.root)
+    win.title("Wybór Filtra 3x3 (Konwolucja)")
+    
+    frame = ttk.Frame(win, padding="15")
+    frame.pack()
+
+    # 2. Lista rozwijana (Combobox)
+    ttk.Label(frame, text="Wybierz filtr do uruchomienia:").pack(anchor='w')
+    
+    combo = ttk.Combobox(frame, width=35, state="readonly")
+    # Pobierz nazwy z naszego słownika
+    filter_names = list(globals_var.FILTER_MAP.keys())
+    combo['values'] = filter_names
+    combo.current(0) # Ustaw domyślną wartość
+    combo.pack(fill='x', pady=(0, 10))
+
+    # 3. Pole tekstowe do podglądu maski
+    ttk.Label(frame, text="Podgląd maski (kernela) 3x3:").pack(anchor='w')
+    
+    # Używamy czcionki o stałej szerokości dla ładnego formatowania macierzy
+    kernel_display = tk.Text(frame, height=5, width=35, font=("Courier New", 10))
+    kernel_display.pack(pady=(0, 10))
+
+    # 4. Funkcja aktualizująca podgląd maski
+    def on_filter_select(event=None):
+        """Wywoływana przy zmianie w Combobox."""
+        selected_name = combo.get()
+        # Znajdź kernel w słowniku
+        kernel_data = globals_var.FILTER_MAP[selected_name]["kernel"]
+        
+        # Sformatuj kernel (zaokrąglamy dla czytelności filtrów uśredniających)
+        kernel_str = str(np.round(kernel_data, 3))
+        
+        # Wstaw tekst do pola (najpierw włącz, potem wyłącz edycję)
+        kernel_display.config(state='normal')
+        kernel_display.delete('1.0', tk.END)  # Wyczyść pole
+        kernel_display.insert(tk.END, kernel_str) # Wstaw nowy tekst
+        kernel_display.config(state='disabled') # Zablokuj edycję przez użytkownika
+
+    # 5. Funkcja uruchamiająca
+    def on_run_filter():
+        """Wywoływana przez przycisk 'Uruchom'."""
+        selected_name = combo.get()
+        # Znajdź funkcję (z Kroku 6) w słowniku
+        function_to_run = globals_var.FILTER_MAP[selected_name]["func"]
+        
+        win.destroy() # Zamknij to okno
+        
+        # Uruchom wybraną funkcję z Kroku 6
+        function_to_run() 
+
+    # 6. Podpięcie zdarzeń i przycisk
+    
+    # Podepnij funkcję 'on_filter_select' pod zdarzenie zmiany w Combobox
+    combo.bind("<<ComboboxSelected>>", on_filter_select)
+    
+    # Uruchom funkcję raz na starcie, aby pokazać domyślną maskę
+    on_filter_select() 
+
+    # Przycisk "Uruchom"
+    run_button = ttk.Button(frame, text="Uruchom wybrany filtr", command=on_run_filter)
+    run_button.pack(fill='x')
+
+def run_gaussian_filter():
+    """
+    Wykonuje filtrację Gaussa (funkcja specjalna).
+    
+    Używa dedykowanej funkcji cv2.GaussianBlur i implementuje 
+    wymagane 3 tryby obsługi brzegów.
+    """
+    
+    # 1. Pobierz aktywny obraz (użycie twojej funkcji)
+    img_info, image = get_focused_image_data()
+    if image is None:
+        return # Błąd został już wyświetlony
+
+    # 2. Walidacja (zgodnie z wykładem)
+    if len(image.shape) != 2:
+        messagebox.showerror("Błąd", "Operacja Gaussa działa tylko na obrazach monochromatycznych.")
+        return
+
+    # 3. Pobierz opcje brzegów od użytkownika (Krok 4)
+    options = get_border_options()
+    if options is None:
+        print("Operacja Gaussa anulowana przez użytkownika.")
+        return # Użytkownik kliknął "Anuluj"
+
+    # 4. Wykonaj filtrowanie na podstawie wyboru
+    
+    result_image = None
+    border_mode = options["mode"]
+    border_value = options.get("value", 0)
+    
+    # [cite_start]Zgodnie z planem i wykładem, używamy maski 3x3 [cite: 33, 35]
+    ksize = (3, 3) 
+    # Ustawienie sigmaX=0 sprawia, że OpenCV obliczy ją automatycznie z ksize
+    sigmaX = 0 
+
+    try:
+        if border_mode == "REFLECT":
+            # Najprostszy przypadek: cv2.GaussianBlur obsługuje BORDER_REFLECT
+            result_image = cv2.GaussianBlur(image, ksize, sigmaX, 
+                                            borderType=cv2.BORDER_REFLECT)
+        
+        elif border_mode == "CONSTANT":
+            # Przypadek 2: Wymaga ręcznego dodania ramki (jak w Kroku 2)
+            pad_size = 1 # Dla maski 3x3
+            h, w = image.shape[:2]
+            
+            # 1. Dodaj ramkę o wartości 'n'
+            padded_image = cv2.copyMakeBorder(image, 
+                                              pad_size, pad_size, pad_size, pad_size, 
+                                              cv2.BORDER_CONSTANT, 
+                                              value=border_value)
+            
+            # 2. Filtruj z BORDER_ISOLATED
+            filtered_padded = cv2.GaussianBlur(padded_image, ksize, sigmaX, 
+                                               borderType=cv2.BORDER_ISOLATED)
+            
+            # 3. Wytnij środek (usuń ramkę)
+            result_image = filtered_padded[pad_size : pad_size + h, pad_size : pad_size + w]
+
+        elif border_mode == "CUSTOM_BORDER":
+            # Przypadek 3: Wypełnij ramkę *po* obliczeniach (jak w Kroku 3)
+            
+            # 1. Oblicz filtr, używając bezpiecznego BORDER_REFLECT
+            temp_blurred_image = cv2.GaussianBlur(image, ksize, sigmaX, 
+                                                  borderType=cv2.BORDER_REFLECT)
+            
+            # 2. Skopiuj i ręcznie nadpisz 1px ramki
+            result_image = temp_blurred_image.copy()
+            safe_value = np.clip(border_value, 0, 255).astype(image.dtype)
+            
+            result_image[0, :] = safe_value  # Góra
+            result_image[-1, :] = safe_value # Dół
+            result_image[:, 0] = safe_value  # Lewo
+            result_image[:, -1] = safe_value # Prawo
+
+        # 5. Wyświetl wynik
+        if result_image is not None:
+            title = new_file_name(Path(img_info["filename"]), "_gaussian_blur")
+            # Użyj twojej funkcji
+            show_image(result_image, title=title)
+            
+    except Exception as e:
+        messagebox.showerror("Błąd Gaussa", f"Nie udało się zastosować filtru Gaussa:\n{e}")
+
+def run_sobel_operator():
+    """
+    Wykonuje detekcję krawędzi operatorem Sobela.
+    
+    Łączy gradienty z dwóch prostopadłych kierunków (X i Y),
+    zgodnie z wykładem.
+    Implementuje 3 wymagane tryby obsługi brzegów.
+    """
+    
+    # 1. Pobierz aktywny obraz
+    img_info, image = get_focused_image_data()
+    if image is None:
+        return
+
+    # 2. Walidacja
+    if len(image.shape) != 2:
+        messagebox.showerror("Błąd", "Operator Sobela działa tylko na obrazach monochromatycznych.")
+        return
+
+    # 3. Pobierz opcje brzegów
+    options = get_border_options()
+    if options is None:
+        print("Operacja Sobela anulowana przez użytkownika.")
+        return
+
+    # 4. Przygotuj parametry
+    border_mode = options["mode"]
+    border_value = options.get("value", 0)
+    
+    # Rozmiar maski (zgodnie z zadaniem 3x3)
+    ksize = 3
+    
+    # Używamy głębi 64F (float), aby przechwycić ujemne wartości gradientu,
+    # o czym wspomniano na wykładzie.
+    ddepth = cv2.CV_64F
+    
+    # Zmienne na wyniki pośrednie
+    sobel_x = None
+    sobel_y = None
+
+    try:
+        # --- 5. Obliczanie gradientów X i Y z obsługą brzegów ---
+        
+        # Logika dla BORDER_CONSTANT (wymaga ręcznego dodania ramki)
+        if border_mode == "CONSTANT":
+            pad_size = 1 # Dla maski 3x3
+            h, w = image.shape[:2]
+            
+            padded_image = cv2.copyMakeBorder(image, 
+                                              pad_size, pad_size, pad_size, pad_size, 
+                                              cv2.BORDER_CONSTANT, 
+                                              value=border_value)
+            
+            # Oblicz X i Y na obrazie z ramką
+            sobel_x_padded = cv2.Sobel(padded_image, ddepth, 1, 0, ksize, 
+                                     borderType=cv2.BORDER_ISOLATED)
+            sobel_y_padded = cv2.Sobel(padded_image, ddepth, 0, 1, ksize, 
+                                     borderType=cv2.BORDER_ISOLATED)
+            
+            # Wytnij środek (usuń ramkę)
+            sobel_x = sobel_x_padded[pad_size : pad_size + h, pad_size : pad_size + w]
+            sobel_y = sobel_y_padded[pad_size : pad_size + h, pad_size : pad_size + w]
+        
+        # Logika dla BORDER_REFLECT i CUSTOM_BORDER (który liczy się jak REFLECT)
+        else:
+            # cv2.BORDER_REFLECT jest domyślnym bezpiecznym trybem
+            sobel_x = cv2.Sobel(image, ddepth, 1, 0, ksize, 
+                                borderType=cv2.BORDER_REFLECT)
+            sobel_y = cv2.Sobel(image, ddepth, 0, 1, ksize, 
+                                borderType=cv2.BORDER_REFLECT)
+        
+        # --- 6. Łączenie gradientów ---
+        # Wykład opisuje to jako: pierwiastek z sumy kwadratów.
+        # W OpenCV robi to funkcja cv2.magnitude:
+        magnitude = cv2.magnitude(sobel_x, sobel_y)
+        
+        # Konwertujemy wynik (float) z powrotem na 8-bit (0-255)
+        result_image = cv2.convertScaleAbs(magnitude)
+
+        # --- 7. Obsługa niestandardowej ramki (jeśli wybrano) ---
+        if border_mode == "CUSTOM_BORDER":
+            # Malujemy ramkę na *końcowym* obrazie
+            safe_value = np.clip(border_value, 0, 255).astype(image.dtype)
+            result_image[0, :] = safe_value  # Góra
+            result_image[-1, :] = safe_value # Dół
+            result_image[:, 0] = safe_value  # Lewo
+            result_image[:, -1] = safe_value # Prawo
+
+        # --- 8. Wyświetlenie wyniku ---
+        if result_image is not None:
+            title = new_file_name(Path(img_info["filename"]), "_sobel_operator")
+            show_image(result_image, title=title)
+            
+    except Exception as e:
+        messagebox.showerror("Błąd Sobela", f"Nie udało się zastosować operatora Sobela:\n{e}")
