@@ -1232,3 +1232,99 @@ def run_sobel_operator():
             
     except Exception as e:
         messagebox.showerror("Błąd Sobela", f"Nie udało się zastosować operatora Sobela:\n{e}")
+
+def run_median_filter():
+    """
+    Zadanie 4: Wykonuje filtrację medianową.
+    
+    Pyta o rozmiar (3x3, 5x5, 7x7, 9x9) i stosuje 1 z 3 trybów brzegów.
+    Używa cv2.medianBlur.
+    """
+    
+    # 1. Pobierz aktywny obraz
+    img_info, image = get_focused_image_data()
+    if image is None:
+        return
+
+    # 2. Walidacja (zgodnie z wykładem) [cite: 111, 114]
+    if len(image.shape) != 2:
+        messagebox.showerror("Błąd", "Filtr medianowy działa tylko na obrazach monochromatycznych.")
+        return
+
+    # 3. Zapytaj o rozmiar otoczenia (interaktywnie)
+    ksize = get_integer_input(globals_var.root, "Zadanie 4: Filtr Medianowy", "Podaj rozmiar otoczenia (3, 5, 7 lub 9):", 3)
+    
+    if ksize is None:
+        return # Anulowano
+        
+    # Walidacja rozmiaru [cite: 102]
+    if ksize not in [3, 5, 7, 9]:
+         messagebox.showerror("Błąd", "Nieprawidłowy rozmiar. Proszę wybrać 3, 5, 7 lub 9.")
+         return
+
+    # 4. Pobierz opcje brzegów (ponowne użycie funkcji z Kroku 4)
+    options = get_border_options()
+    if options is None:
+        print("Operacja medianowa anulowana.")
+        return
+
+    # 5. Przygotuj parametry
+    result_image = None
+    border_mode = options["mode"]
+    border_value = options.get("value", 0)
+    
+    # Oblicz, ile pikseli ramki potrzebujemy (np. 3x3 -> 1px, 5x5 -> 2px)
+    pad_size = ksize // 2
+    
+    padded_image = None
+    h, w = image.shape[:2]
+
+    try:
+        # 6. Ręczne dodanie ramki (padding)
+        # cv2.medianBlur nie ma parametru borderType,
+        # więc sami przygotowujemy obraz z ramką.
+        
+        if border_mode == "REFLECT":
+            # Wypełnienie przez odbicie lustrzane
+            padded_image = cv2.copyMakeBorder(image, 
+                                              pad_size, pad_size, pad_size, pad_size, 
+                                              cv2.BORDER_REFLECT)
+                                              
+        elif border_mode == "CONSTANT":
+            # Wypełnienie stałą wartością 'n'
+            padded_image = cv2.copyMakeBorder(image, 
+                                              pad_size, pad_size, pad_size, pad_size, 
+                                              cv2.BORDER_CONSTANT, 
+                                              value=border_value)
+                                              
+        elif border_mode == "CUSTOM_BORDER":
+            # Liczymy jak REFLECT, a ramkę domalujemy na końcu
+            padded_image = cv2.copyMakeBorder(image, 
+                                              pad_size, pad_size, pad_size, pad_size, 
+                                              cv2.BORDER_REFLECT)
+        
+        # 7. Zastosuj filtr medianowy 
+        if padded_image is not None:
+            filtered_padded = cv2.medianBlur(padded_image, ksize)
+            
+            # 8. Wytnij środek (usuń ramkę), aby wrócić do oryginalnego rozmiaru
+            result_image = filtered_padded[pad_size : pad_size + h, pad_size : pad_size + w]
+        
+        # 9. Obsługa niestandardowej ramki (jeśli wybrano)
+        if border_mode == "CUSTOM_BORDER" and result_image is not None:
+            # Wypełniamy ramkę *wyniku* wartością 'n'
+            safe_value = np.clip(border_value, 0, 255).astype(image.dtype)
+            
+            result_image[0:pad_size, :] = safe_value  # Góra
+            result_image[h-pad_size:h, :] = safe_value # Dół
+            result_image[:, 0:pad_size] = safe_value  # Lewo
+            result_image[:, w-pad_size:w] = safe_value # Prawo
+        
+        # 10. Wyświetl wynik
+        if result_image is not None:
+            title = new_file_name(Path(img_info["filename"]), f"_median_{ksize}x{ksize}[{globals_var.current_id}]")
+            show_image(result_image, title=title)
+            
+    except Exception as e:
+        # Obsługa błędów, np. brak pamięci lub błąd OpenCV
+        messagebox.showerror("Błąd filtru medianowego", f"Nie udało się zastosować filtru:\n{e}")
