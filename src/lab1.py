@@ -13,6 +13,7 @@ from basic import *
 
 """funkcje zrobione na labach 1"""
 
+# zad 1
 def save_image():
     """Zapisuje sfocusowany obraz w wybranej przez użytkownika lokalizacji."""
     if globals_var.current_window in globals_var.opened_images:
@@ -37,7 +38,6 @@ def save_image():
                 else:
                     messagebox.showerror("Błąd", "Błąd przy zapisie obrazu.")
                     return
-            print(f"Zapisano obraz w: {file_path}")
     else:
         messagebox.showerror("Błąd", "Brak aktywnego okna z obrazem do zapisu.")
 
@@ -74,6 +74,7 @@ def duplicate_focused_image():
     else:
         messagebox.showerror("Błąd", "Brak aktywnego okna z obrazem do duplikacji.")
 
+# zad 2
 def show_lut():
     """Generuje i wyświetla tablicę LUT dla aktualnie sfocusowanego obrazu."""
     lut = generate_lut()
@@ -151,11 +152,11 @@ def show_lut():
             for i in range(256):
                 tree.insert("", tk.END, values=(i, lut["lut"][0][i], lut["lut"][1][i], lut["lut"][2][i]))
 
+# zad 3
 def cal_mono_hist(mono_lut):
     """ oblicza monochromatyczny histogram (albo jeden kanał kolorowy) i zwraca norm, var_max, mean, std, median_value, total_pixels.
      mono_lut to już jest sama tablica "lut", dla której wiadomo, że ma tylko jedną listę """
     var_max = max(mono_lut) # do niej normowane wysokości słupków
-    print(var_max)
 
     # normowanie przez podzielenie
     norm = mono_lut
@@ -207,15 +208,6 @@ def cal_hist(okno):
         if lut["color"] == False:
 
             norm, var_max, mean, std, median_value, total_pixels = cal_mono_hist(lut["lut"])
-
-            # Wyniki
-            print(f"Średnia jasność: {mean:.2f}")
-            print(f"Odchylenie standardowe: {std:.2f}")
-            print(f"Mediana: {median_value}")
-            print(f"Liczba pikseli: {total_pixels}")
-
-            # pokaż dla sprawdzenia
-            print(norm)
 
             #zwrócenie danych potrzebnych dla show_hist()
             data = {"main_frame": main_frame, "norm": norm, "var_max": var_max, "bar_width": bar_width,
@@ -282,7 +274,7 @@ def show_hist(data):
     canvas.create_text(490, 260, text=f"Liczba pikseli: {data["total_pixels"]}", anchor='n')
 
 def cal_and_show_hist():
-    """ oblicza i pokazuje cały histogram dla monochromatycznych i kolrowych obrazów
+    """ oblicza i pokazuje cały histogram dla monochromatycznych i kolorowych obrazów
     (najpierw sprawdza, czy jakiś obrazek jest sfocusowany)"""
     #sprawdzamy czy wogóle jakiś obrazek jest
     if globals_var.current_window in globals_var.opened_images:
@@ -302,8 +294,6 @@ def cal_without_supersaturation_hist(image, lut):
     # max_val to ostatnia niezerowa wartość w lut
     min_val = next(i for i, v in enumerate(lut) if v > 0)
     max_val = max(i for i, v in enumerate(lut) if v > 0)
-
-    print(f"min_val = {min_val}, max_val = {max_val}")
 
     Lmin = 0
     Lmax = 255
@@ -373,8 +363,6 @@ def cal_with_supersaturation5_hist(image, lut):
         if cumsum >= threshold:
             max_val = i
             break
-    
-    print(f"min_val = {min_val}, max_val = {max_val}")
     
     Lmin = 0
     Lmax = 255
@@ -527,6 +515,7 @@ def histogram_equalization():
     title = new_file_name(Path(img_info["filename"]), "_eq")
     show_image(equalized_image, title)
 
+# zad 4
 def negation():
     """Negacja - wersja zoptymalizowana bez pętli."""
     

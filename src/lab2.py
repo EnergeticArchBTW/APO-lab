@@ -14,6 +14,7 @@ from basic import *
 
 """funkcje zrobione na labach 2"""
 
+# zad 1
 def compare_images(image1, image2):
     """funkcja porównująca 2 obrazy, czy się nadają do operacji logicznych
     Returns:
@@ -192,7 +193,6 @@ def add_images_with_saturation():
     """
 
     images = select_images_window()
-    print(images)
 
     if not images or len(images) < 2:
         messagebox.showerror("Błąd", "Potrzebne są co najmniej 2 obrazy!")
@@ -491,11 +491,12 @@ def subtract_images_absolute():
     # 4. Wyświetlenie wyniku
     show_image(result, f"abs_diff[{globals_var.current_id}]")
 
+# zad 2
 def convert_grayscale_to_binary_mask():
     """
     Pobiera sfocusowany obraz (8-bit w skali szarości) i konwertuje go
     na maskę binarną (0/255) na podstawie progu podanego przez użytkownika.
-    zakłądam że threshold zawsze jest 128.
+    zakładam że threshold zawsze jest 128.
     """
     
     # 1. Pobranie aktywnego obrazu i walidacja
@@ -642,7 +643,6 @@ def xor_logic():
     show_image(result_image, f"xor_logic[{globals_var.current_id}]")
 
 # Zad 3
-
 def apply_opencv_filter(image, kernel, border_type, border_value=0):
     """
     Uniwersalna funkcja do filtrowania obrazu.
@@ -869,7 +869,7 @@ def run_generic_filter(kernel, filter_name_suffix):
     if image is None:
         return # Błąd został już wyświetlony
 
-    # [cite_start]2. Walidacja (zgodnie z wykładem [cite: 5, 16])
+    # 2. Walidacja (zgodnie z wykładem)
     if len(image.shape) != 2:
         messagebox.showerror("Błąd", "Operacje sąsiedztwa działają tylko na obrazach monochromatycznych (jednokanałowych).")
         return
@@ -877,7 +877,6 @@ def run_generic_filter(kernel, filter_name_suffix):
     # 3. Pobierz opcje brzegów od użytkownika (Krok 4)
     options = get_border_options()
     if options is None:
-        print("Operacja filtrowania anulowana przez użytkownika.")
         return # Użytkownik kliknął "Anuluj"
 
     # 4. Wykonaj filtrowanie na podstawie wyboru
@@ -912,7 +911,6 @@ def run_generic_filter(kernel, filter_name_suffix):
 
 def menu_smooth_avg():
     """Wywołuje filtr uśredniający (wszystkie wagi 1/9)."""
-    print("Wybrano: Wygładzanie uśredniające")
     run_generic_filter(globals_var.KERNEL_AVG, "smooth_avg")
 
 def menu_smooth_weighted():
@@ -920,66 +918,54 @@ def menu_smooth_weighted():
     Wywołuje filtr uśredniający ważony.
     Zgodnie z wykładem jest to filtr "krzyż".
     """
-    print("Wybrano: Wygładzanie ważone (krzyż)")
     run_generic_filter(globals_var.KERNEL_WEIGHTED_AVG, "smooth_weighted")
 
 # 2. Wyostrzanie liniowe (Laplasjany)
 
 def menu_sharpen_lap1():
     """Wywołuje pierwszą maskę laplasjanową."""
-    print("Wybrano: Wyostrzanie - Laplasjan 1")
     run_generic_filter(globals_var.KERNEL_LAPLACIAN_1, "sharpen_lap1")
 
 def menu_sharpen_lap2():
     """Wywołuje drugą maskę laplasjanową."""
-    print("Wybrano: Wyostrzanie - Laplasjan 2")
     run_generic_filter(globals_var.KERNEL_LAPLACIAN_2, "sharpen_lap2")
 
 def menu_sharpen_lap3():
     """Wywołuje trzecią maskę laplasjanową."""
-    print("Wybrano: Wyostrzanie - Laplasjan 3")
     run_generic_filter(globals_var.KERNEL_LAPLACIAN_3, "sharpen_lap3")
 
 # 3. Kierunkowa detekcja krawędzi (Prewitt)
 
 def menu_prewitt_e():
     """Detekcja krawędzi Prewitta - kierunek Wschód (E)."""
-    print("Wybrano: Prewitt Kierunek E")
     run_generic_filter(globals_var.KERNEL_PREWITT_E, "prewitt_E")
 
 def menu_prewitt_ne():
     """Detekcja krawędzi Prewitta - kierunek Północny-Wschód (NE)."""
-    print("Wybrano: Prewitt Kierunek NE")
     run_generic_filter(globals_var.KERNEL_PREWITT_NE, "prewitt_NE")
 
 def menu_prewitt_n():
     """Detekcja krawędzi Prewitta - kierunek Północ (N)."""
-    print("Wybrano: Prewitt Kierunek N")
     run_generic_filter(globals_var.KERNEL_PREWITT_N, "prewitt_N")
 
 def menu_prewitt_nw():
     """Detekcja krawędzi Prewitta - kierunek Północny-Zachód (NW)."""
-    print("Wybrano: Prewitt Kierunek NW")
     run_generic_filter(globals_var.KERNEL_PREWITT_NW, "prewitt_NW")
 
 def menu_prewitt_w():
     """Detekcja krawędzi Prewitta - kierunek Zachód (W)."""
-    print("Wybrano: Prewitt Kierunek W")
     run_generic_filter(globals_var.KERNEL_PREWITT_W, "prewitt_W")
 
 def menu_prewitt_sw():
     """Detekcja krawędzi Prewitta - kierunek Południowy-Zachód (SW)."""
-    print("Wybrano: Prewitt Kierunek SW")
     run_generic_filter(globals_var.KERNEL_PREWITT_SW, "prewitt_SW")
 
 def menu_prewitt_s():
     """Detekcja krawędzi Prewitta - kierunek Południe (S)."""
-    print("Wybrano: Prewitt Kierunek S")
     run_generic_filter(globals_var.KERNEL_PREWITT_S, "prewitt_S")
 
 def menu_prewitt_se():
     """Detekcja krawędzi Prewitta - kierunek Południowy-Wschód (SE)."""
-    print("Wybrano: Prewitt Kierunek SE")
     run_generic_filter(globals_var.KERNEL_PREWITT_SE, "prewitt_SE")
 
 def show_filter_selection_window():
@@ -1074,7 +1060,6 @@ def run_gaussian_filter():
     # 3. Pobierz opcje brzegów od użytkownika (Krok 4)
     options = get_border_options()
     if options is None:
-        print("Operacja Gaussa anulowana przez użytkownika.")
         return # Użytkownik kliknął "Anuluj"
 
     # 4. Wykonaj filtrowanie na podstawie wyboru
@@ -1159,7 +1144,6 @@ def run_sobel_operator():
     # 3. Pobierz opcje brzegów
     options = get_border_options()
     if options is None:
-        print("Operacja Sobela anulowana przez użytkownika.")
         return
 
     # 4. Przygotuj parametry
@@ -1233,6 +1217,7 @@ def run_sobel_operator():
     except Exception as e:
         messagebox.showerror("Błąd Sobela", f"Nie udało się zastosować operatora Sobela:\n{e}")
 
+# zad 4
 def run_median_filter():
     """
     Zadanie 4: Wykonuje filtrację medianową.
@@ -1265,7 +1250,6 @@ def run_median_filter():
     # 4. Pobierz opcje brzegów (ponowne użycie funkcji z Kroku 4)
     options = get_border_options()
     if options is None:
-        print("Operacja medianowa anulowana.")
         return
 
     # 5. Przygotuj parametry
@@ -1329,6 +1313,7 @@ def run_median_filter():
         # Obsługa błędów, np. brak pamięci lub błąd OpenCV
         messagebox.showerror("Błąd filtru medianowego", f"Nie udało się zastosować filtru:\n{e}")
 
+# zad 5
 def run_canny_detector():
     """
     Zadanie 5: Implementacja detekcji krawędzi operatorem Canny'ego.
@@ -1353,7 +1338,6 @@ def run_canny_detector():
     threshold1 = get_integer_input(globals_var.root, "Zadanie 5: Operator Canny'ego (1/2)", "Podaj dolny próg (Threshold 1):", 50)
     
     if threshold1 is None:
-        print("Operacja Canny'ego anulowana.")
         return # Użytkownik kliknął "Anuluj"
 
     # 4. Pobierz górny próg (Threshold2) - OPCJONALNY
