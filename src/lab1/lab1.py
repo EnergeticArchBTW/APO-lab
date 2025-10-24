@@ -57,7 +57,7 @@ def open_and_show_image():
             image = cv2.imdecode(file_bytes, cv2.IMREAD_UNCHANGED)
         if image is not None:
             # Dodaj ID do nazwy pliku
-            display_name = new_file_name(file_path_obj, f"[{globals_var.current_id}]")
+            display_name = file_path_obj.name
             # Pokaz obraz
             show_image(image, title=display_name)
         else:

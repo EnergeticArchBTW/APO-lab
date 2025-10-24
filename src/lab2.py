@@ -184,8 +184,8 @@ def add_images_without_saturation():
     #    i przekonwertować z powrotem na typ uint8 (0-255).
     result = np.round(sum_images).astype(np.uint8)
     
-    show_image(result, f"without_sat[{globals_var.current_id}]")
-    globals_var.current_id += 1
+    show_image(result, f"without_sat")
+    #globals_var.current_id += 1
 
 def add_images_with_saturation():
     """funkcja dodająca od 2 do 5 obrazów Z WYSYCENIEM (saturacją, czyli obcinaniem) z GUI
@@ -215,7 +215,7 @@ def add_images_with_saturation():
         # cv2.add() wykonuje dodawanie z saturacją
         result = cv2.add(result, img) 
     
-    show_image(result, f"with_sat[{globals_var.current_id}]")
+    show_image(result, f"with_sat")
 
 def operation_on_scalar(image, operation, value, saturation=True):
     """
@@ -350,7 +350,7 @@ def add_number_with_stauration():
     
     result = operation_on_scalar(image, 'add', value, saturation=True)
     if result is not None:
-        show_image(result, f"add_num_with_sat[{globals_var.current_id}]")
+        show_image(result, f"add_num_with_sat")
 
 def add_number_without_stauration():
     """funkcja dodająca skalar do obrazu BEZ WYSYCENIA (z zawijaniem) z GUI"""
@@ -371,7 +371,7 @@ def add_number_without_stauration():
     
     result = operation_on_scalar(image, 'add', value, saturation=False)
     if result is not None:
-        show_image(result, f"add_num_without_sat[{globals_var.current_id}]")
+        show_image(result, f"add_num_without_sat")
 
 def divide_number_with_stauration():
     """funkcja dzieląca obraz przez skalar Z WYSYCENIEM (saturacją, czyli obcinaniem) z GUI"""
@@ -392,7 +392,7 @@ def divide_number_with_stauration():
     
     result = operation_on_scalar(image, 'divide', value, saturation=True)
     if result is not None:
-        show_image(result, f"divide_num_with_sat[{globals_var.current_id}]")
+        show_image(result, f"divide_num_with_sat")
 
 def divide_number_without_stauration():
     """funkcja dzieląca obraz przez skalar BEZ WYSYCENIA (z zawijaniem) z GUI"""
@@ -413,7 +413,7 @@ def divide_number_without_stauration():
     
     result = operation_on_scalar(image, 'divide', value, saturation=False)
     if result is not None:
-        show_image(result, f"divide_num_without_sat[{globals_var.current_id}]")
+        show_image(result, f"divide_num_without_sat")
 
 def multiply_number_with_stauration():
     """funkcja mnożąca obraz przez skalar Z WYSYCENIEM (saturacją, czyli obcinaniem) z GUI"""
@@ -434,7 +434,7 @@ def multiply_number_with_stauration():
     
     result = operation_on_scalar(image, 'multiply', value, saturation=True)
     if result is not None:
-        show_image(result, f"multiply_num_with_sat[{globals_var.current_id}]")
+        show_image(result, f"multiply_num_with_sat")
 
 def multiply_number_without_stauration():
     """funkcja mnożąca obraz przez skalar BEZ WYSYCENIA (z zawijaniem) z GUI"""
@@ -455,7 +455,7 @@ def multiply_number_without_stauration():
     
     result = operation_on_scalar(image, 'multiply', value, saturation=False)
     if result is not None:
-        show_image(result, f"multiply_num_without_sat[{globals_var.current_id}]")
+        show_image(result, f"multiply_num_without_sat")
 
 def subtract_images_absolute():
     """
@@ -489,7 +489,7 @@ def subtract_images_absolute():
     result = cv2.absdiff(img1, img2)
     
     # 4. Wyświetlenie wyniku
-    show_image(result, f"abs_diff[{globals_var.current_id}]")
+    show_image(result, f"abs_diff")
 
 # zad 2
 def convert_grayscale_to_binary_mask():
@@ -614,7 +614,7 @@ def and_logic():
     # dla każdego bitu w odpowiadających sobie pikselach.
     result_image = cv2.bitwise_and(images[0], images[1])
 
-    show_image(result_image, f"and_logic[{globals_var.current_id}]")
+    show_image(result_image, f"and_logic")
 
 def or_logic():
     """operacja OR jednopunktowa dwuargumentowa wyświetla przetworzony obraz"""
@@ -627,7 +627,7 @@ def or_logic():
     # dla każdego bitu w odpowiadających sobie pikselach.
     result_image = cv2.bitwise_or(images[0], images[1])
     
-    show_image(result_image, f"or_logic[{globals_var.current_id}]")
+    show_image(result_image, f"or_logic")
 
 def xor_logic():
     """operacja XOR jednopunktowa dwuargumentowa wyświetla przetworzony obraz"""
@@ -640,7 +640,7 @@ def xor_logic():
     # dla każdego bitu w odpowiadających sobie pikselach.
     result_image = cv2.bitwise_xor(images[0], images[1])
     
-    show_image(result_image, f"xor_logic[{globals_var.current_id}]")
+    show_image(result_image, f"xor_logic")
 
 # Zad 3
 def apply_opencv_filter(image, kernel, border_type, border_value=0):
@@ -900,7 +900,7 @@ def run_generic_filter(kernel, filter_name_suffix):
     # 5. Wyświetl wynik
     if result_image is not None:
         # Wygeneruj nową nazwę
-        title = new_file_name(Path(img_info["filename"]), f"_{filter_name_suffix}[{globals_var.current_id}]")
+        title = new_file_name(Path(img_info["filename"]), f"_{filter_name_suffix}")
         
         # Użyj twojej funkcji
         show_image(result_image, title=title)
@@ -1306,7 +1306,7 @@ def run_median_filter():
         
         # 10. Wyświetl wynik
         if result_image is not None:
-            title = new_file_name(Path(img_info["filename"]), f"_median_{ksize}x{ksize}[{globals_var.current_id}]")
+            title = new_file_name(Path(img_info["filename"]), f"_median_{ksize}x{ksize}")
             show_image(result_image, title=title)
             
     except Exception as e:
@@ -1360,7 +1360,7 @@ def run_canny_detector():
         edges = cv2.Canny(blurred_image, threshold1, threshold2)
         
         # 8. Wyświetl wynik
-        title = new_file_name(Path(img_info["filename"]), f"_canny_{threshold1}-{threshold2}[{globals_var.current_id}]")
+        title = new_file_name(Path(img_info["filename"]), f"_canny_{threshold1}-{threshold2}")
         show_image(edges, title=title)
         
     except Exception as e:

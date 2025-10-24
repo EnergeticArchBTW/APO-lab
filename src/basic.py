@@ -1,4 +1,5 @@
 import cv2  # biblioteka do wczytywania/zapisu obrazów
+from pathlib import Path  # do pracy ze ścieżkami
 import globals_var  # zmienne globalne
 import threading # do wielowątkowości
 from win_thread import win_thread
@@ -12,6 +13,21 @@ from PIL import Image, ImageTk  # do konwersji obrazów do formatu Tkinter
 def show_image(image, title="Podgląd obrazu"):
     """Wyświetla obraz w nowym oknie Tkinter z Canvas."""
     win = Toplevel()
+    # by od razu id pokazywało
+    title_tmp = title.strip()
+    try:
+        path = Path(title)
+        pre = path.stem
+        suf = path.suffix
+        if suf == "":
+            suf = ".jpg"
+        #pre, suf = title.split(".")
+    except Exception as e:
+        #jeżeli nie ma rozszerzenia
+        pre = title
+        suf = ".jpg"
+    
+    title = f"{pre}[{globals_var.current_id}]{suf}"
     win.title(title)
 
     # Konwersja obrazu OpenCV (BGR) do PIL (RGB)
