@@ -13,6 +13,9 @@ from PIL import Image, ImageTk  # do konwersji obrazów do formatu Tkinter
 def show_image(image, title="Podgląd obrazu"):
     """Wyświetla obraz w nowym oknie Tkinter z Canvas."""
     win = Toplevel()
+    # daje focus przy otwarciu okna
+    win.focus_force()
+
     # by od razu id pokazywało
     title_tmp = title.strip()
     try:
