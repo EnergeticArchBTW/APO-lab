@@ -10,9 +10,8 @@ import numpy as np # do operacji na tablicach
 import globals_var  # zmienne globalne
 from win_thread import win_thread
 from basic import *
-#from lab1.lab1window import *
 
-"""funkcje do labów 1, które wewnętrznie coś liczą i nie są bezpośrednio wywoływane"""
+"""funkcje do labów 1, które wewnętrznie coś robią i nie są bezpośrednio wywoływane"""
 
 # zad 3
 def cal_mono_hist(mono_lut):

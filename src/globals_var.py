@@ -1,6 +1,6 @@
 from pathlib import Path  # do pracy ze ścieżkami
 import numpy as np
-from lab2 import *
+from lab2.lab2 import *
 
 """Moduł z globalnymi zmiennymi dla aplikacji."""
 
