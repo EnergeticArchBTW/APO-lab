@@ -3,6 +3,7 @@ from pathlib import Path  # do pracy ze ścieżkami
 import globals_var  # zmienne globalne
 import threading # do wielowątkowości
 from win_thread import win_thread
+import tkinter as tk
 from tkinter import Toplevel, Canvas #do okna z obrazem
 from tkinter import messagebox # do błędów
 import numpy as np # do operacji na tablicach
@@ -265,3 +266,120 @@ def apply_per_channel(image, lut_data, single_channel_function):
 
         # składanie
         return np.dstack((b_processed, g_processed, r_processed))
+
+def select_images_window():
+    """
+    Otwiera podrzędne okno Tkinter z listą Checkbuttonów bazujących na
+    nazwach plików w global_vars.opened_images. Po wybraniu i kliknięciu
+    'Wybierz', zwraca listę obiektów zdjęć ("image") dla zaznaczonych elementów.
+
+    :return: Lista obiektów obrazów ("image") z zaznaczonych elementów.
+             Zwraca None, jeśli nie ma obrazów do wyboru lub okno jest zamknięte.
+    """
+
+    # 1. Sprawdzenie, czy są jakiekolwiek obrazy do wyboru
+    if not globals_var.opened_images:
+        messagebox.showinfo("Brak obrazów", "Brak otwartych obrazów do wyboru.")
+        return []
+
+    # 2. Przygotowanie danych do wyświetlenia
+    image_data = []
+    
+    for key, data in globals_var.opened_images.items():
+        image_obj = data.get("image")
+        data_id = data.get("id")
+                
+        image_data.append((key, data.get("filename", "Brak Nazwy"), image_obj, data_id))
+
+    if not image_data:
+        messagebox.showinfo("Brak danych", "Brak danych obrazów do przetworzenia.")
+        selection_window.destroy() # Zamknij okno, jeśli zostało otwarte
+        return []
+
+    # 3. Utworzenie okna podrzędnego (Toplevel)
+    # 'main_app_root' to główne okno Twojej aplikacji, przekazane jako argument
+    selection_window = tk.Toplevel(globals_var.root)
+    selection_window.title("Wybierz Obrazy")
+    selection_window.geometry("450x300")
+   
+    # Powiązanie okna z rodzicem (dobre praktyki)
+    selection_window.transient(globals_var.root) 
+   
+    # Zabezpieczenie przed wielokrotnym otwieraniem (opcjonalne, ale zalecane)
+    selection_window.grab_set()
+
+    # Słownik do przechowywania zmiennych Checkbuttonów (StringVar lub IntVar)
+    # Klucz: klucz słownika z opened_images (np. 'okno_1'), Wartość: IntVar
+    check_vars = {}
+    
+    # Lista na finalnie wybrane obiekty zdjęć
+    selected_images = []
+
+    def on_select_button_click():
+        """Obsługuje kliknięcie przycisku 'Wybierz'."""
+        nonlocal selected_images
+        selected_images.clear()
+
+        for checked_id, var in check_vars.items():
+        
+            if var.get() == 1:  # Jeśli Checkbutton jest zaznaczony
+            
+                found_image = None
+            
+                for okno_key, data_dict in globals_var.opened_images.items():
+                    if data_dict.get("id") == checked_id:
+                        found_image = data_dict.get("image")
+                        break 
+                
+                # Musimy użyć 'is not None', aby poprawnie obsługiwać
+                # tablice NumPy
+                
+                if found_image is not None: 
+                    selected_images.append(found_image)
+        
+        # Zamykamy okno i zwalniamy focus
+        selection_window.grab_release()
+        selection_window.destroy()
+
+    # 4. Sekcja wyświetlania (Canvas + Frame dla przewijania)
+    canvas = tk.Canvas(selection_window)
+    canvas.pack(side="left", fill="both", expand=True)
+
+    scrollbar = tk.Scrollbar(selection_window, orient="vertical", command=canvas.yview)
+    scrollbar.pack(side="right", fill="y")
+
+    canvas.configure(yscrollcommand=scrollbar.set)
+    canvas.bind('<Configure>', lambda e: canvas.configure(scrollregion = canvas.bbox("all")))
+
+    # Frame, w którym będą umieszczone Checkbuttony
+    check_frame = tk.Frame(canvas)
+    canvas.create_window((0, 0), window=check_frame, anchor="nw")
+
+    # 5. Generowanie Checkbuttonów
+    for key, filename, image_obj, id in image_data:
+        # Używamy IntVara, żeby sprawdzić, czy Checkbutton jest zaznaczony (0 lub 1)
+        var = tk.IntVar(value=0) 
+        check_vars[id] = var
+
+        # Checkbutton wyświetla nazwę pliku, a jego stan jest powiązany z var
+        cb = tk.Checkbutton(check_frame, text=filename, variable=var, 
+                            anchor="w", justify="left")
+        cb.pack(fill="x", padx=10, pady=2)
+
+    # 6. Dodanie przycisku "Wybierz"
+    select_button = tk.Button(selection_window, text="Wybierz", command=on_select_button_click)
+    select_button.pack(side="bottom", fill="x", pady=10)
+
+    # Uruchomienie pętli zdarzeń okna podrzędnego, czekając na jego zamknięcie
+    # Musimy użyć wait_window, żeby funkcja mogła zwrócić wynik po zamknięciu okna.
+    def on_cancel():
+        """Obsługuje zamknięcie okna przyciskiem 'X'."""
+        selection_window.grab_release()
+        selection_window.destroy()
+        # Funkcja główna 'select_images_window' po prostu zwróci pustą listę
+
+    selection_window.protocol("WM_DELETE_WINDOW", on_cancel)
+    selection_window.wait_window(selection_window)
+    
+    # 7. Zwrócenie wyniku po zamknięciu okna
+    return selected_images
