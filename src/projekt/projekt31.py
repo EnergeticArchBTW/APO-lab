@@ -58,7 +58,23 @@ def averaging_photos():
 
         # 4. Wyświetlanie wyniku
         # Wynik 'result' będzie miał ten sam kształt (mono lub kolor) co obrazy wejściowe
-        show_image(result, f"Uśredniono {ilosc} obrazów")
+        show_image(result, f"Average_{ilosc}_images")
+
+        # --- pokazanie różnicy bezwzględnej między pierwszym obrazem a wynikiem ---
+        img_oryginal_float = images[0].astype(np.float64)
+        img_result_float = result.astype(np.float64)
+
+        abs_diff = cv2.absdiff(img_oryginal_float, img_result_float)
+        # wzmocnienie
+        SCALING_FACTOR = 100 
+        scaled_diff = abs_diff * SCALING_FACTOR
+
+        #obcięcie do 0-255
+        clipped_diff = np.clip(scaled_diff, 0, 255)
+
+        # konwersja do uint8
+        final_diff_image = clipped_diff.astype(np.uint8)
+        show_image(final_diff_image, "Absolute_Difference_First_Image_and_Resultx100")
 
     except Exception as e:
         messagebox.showerror("Błąd obliczeń", f"Wystąpił błąd: {e}")
