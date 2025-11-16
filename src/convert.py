@@ -1,5 +1,6 @@
 import cv2
 import os
+from pathlib import Path
 
 """ osobny plik oddzielony od całego programu, który przerabia kolorowy obraz na monochromatyczny """
 
@@ -29,5 +30,9 @@ def convert_to_grayscale_and_save(input_path, output_path=None):
 
     return image_gray
 
-img = convert_to_grayscale_and_save("C://Users//Michal//Downloads//test.png")
-print(len(img.shape))  # powinno dać 2
+#img = convert_to_grayscale_and_save("C://Users//Michal//Downloads//test.png")
+folder_path_obj = Path("C://Users//Michal//Desktop//APO-Projekt//data//images//projekt")
+
+for obraz in folder_path_obj.iterdir():
+    if obraz.is_file():
+        convert_to_grayscale_and_save(str(obraz))
