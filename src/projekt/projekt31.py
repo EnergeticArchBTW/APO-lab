@@ -39,10 +39,14 @@ def averaging_photos():
         if img.shape != first_shape:
             messagebox.showerror("Błąd", "Wszystkie obrazy muszą mieć te same wymiary i typ (mono/kolor)!")
             return
+    
+    # czy wszystkie obrazy są monochromatyczne?
+    for img in images:
+        if len(img.shape) != 2:
+            messagebox.showerror("Błąd", "Wszystkie obrazy muszą być monochromatyczne!")
+            return
 
-    # --- 3. Uniwersalny blok obliczeniowy ---
-    # Ta część zadziała identycznie dla obrazów (H, W) i (H, W, 3)
-
+    # --- 3. blok obliczeniowy ---
     try:
         # Używamy np.float64 dla maksymalnej precyzji, aby uniknąć błędów zaokrągleń
         sum_images = np.zeros_like(images[0], dtype=np.float64)
@@ -75,6 +79,38 @@ def averaging_photos():
         # konwersja do uint8
         final_diff_image = clipped_diff.astype(np.uint8)
         show_image(final_diff_image, "Absolute_Difference_First_Image_and_Resultx100")
+        # --------------------
+
+        # --- pokazanie statystyk w osobnym oknie ---
+        # średni błąd
+        mean_error = np.mean(abs_diff)
+
+        # procent zmienionych pikseli
+        # count_nonzero() zlicza piksele, gdzie różnica jest większa od 0
+        changed_pixels_count = np.count_nonzero(abs_diff)
+        total_pixels = abs_diff.size
+        percentage_changed = (changed_pixels_count / total_pixels) * 100
+
+        # procent pikseli z błędem większym niż 5
+        THRESHOLD = 5
+        pixels_significant = np.count_nonzero(abs_diff > THRESHOLD)
+        percent_sig = (pixels_significant / total_pixels) * 100
+        # --------------------
+
+        # --- pokazanie statystyk w oknie ---
+        # 1. Utwórz nowe okno na bazie roota
+        win = tk.Toplevel(globals_var.root)
+        win.title(f"Statystyki dla obrazu Average_{ilosc}_images[{globals_var.current_id-2}].jpg")
+    
+        # 2. Dodaj widget tekstowy
+        text_widget = tk.Text(win)
+    
+        # 3. Klucz do skalowania: fill='both' (wypełnij) i expand=True (rozszerzaj)
+        text_widget.pack(fill='both', expand=True)
+    
+        # 4. Wstaw tekst
+        text_widget.insert('1.0', 
+            f"Średni błąd porównując pierwszy obraz z wynikowym: {mean_error:.2f}\nProcent zmienionych pikseli: {percentage_changed:.4f}%\nProcent pikseli z błędem > {THRESHOLD}: {percent_sig:.4f}%")
 
     except Exception as e:
         messagebox.showerror("Błąd obliczeń", f"Wystąpił błąd: {e}")
