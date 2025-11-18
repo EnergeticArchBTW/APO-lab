@@ -11,7 +11,7 @@ class MainMenu(Tk):
     def __init__(
             self,
             # projekt
-            averaging_photos_callabck,
+            averaging_photos_callabck, run_logical_operations_project_callback,
             # lab 1
             open_callback, save_callback, duplicate_callback, lut_callback, hist_callback, without_supersaturation_hist_callback,
             with_supersaturation5_hist_callback, eq_callback, negation_callback, reduce_gray_callback, binary_threshold_callback,
@@ -35,6 +35,7 @@ class MainMenu(Tk):
         # Menu "Projekt"
         file_menu = Menu(menubar, tearoff=0)
         file_menu.add_command(label="uśrednianie obrazów", command=averaging_photos_callabck)
+        file_menu.add_command(label="usuwanie szumu obraz binarny", command=run_logical_operations_project)
         menubar.add_cascade(label="Projekt", menu=file_menu)
 
         # Menu "Lab 1"
@@ -85,7 +86,7 @@ if __name__ == "__main__":
     # threading.Thread(target=show_focused_number, daemon=True).start()
     globals_var.root = MainMenu(
         # projekt
-        averaging_photos,
+        averaging_photos, run_logical_operations_project,
         # lab 1
         open_and_show_image, save_image, duplicate_focused_image, show_lut, cal_and_show_hist, calandshow_without_supersaturation_hist,
         calandshow_with_supersaturation5_hist, histogram_equalization, negation, reduce_gray_levels, binary_threshold, threshold_preserve_gray,

@@ -17,6 +17,16 @@ udziału szumu przez uśredniania kilku obrazów zebranych w takich samych warun
 logicznych na zaszumionych obrazach binarnych. 
 """
 
+def statistics(title, text):
+    """ Pokazuje okno z podanym tytułem i tekstem """
+    win = Toplevel(globals_var.root)
+    win.title(title)
+    
+    text_widget = tk.Text(win)
+    text_widget.pack(fill='both', expand=True)
+    text_widget.insert('1.0', text)
+    text_widget.config(state='disabled')  # tylko do odczytu
+
 def averaging_photos():
     images = select_images_window()
 
@@ -98,19 +108,76 @@ def averaging_photos():
         # --------------------
 
         # --- pokazanie statystyk w oknie ---
-        # 1. Utwórz nowe okno na bazie roota
-        win = tk.Toplevel(globals_var.root)
-        win.title(f"Statystyki dla obrazu Average_{ilosc}_images[{globals_var.current_id-2}].jpg")
-    
-        # 2. Dodaj widget tekstowy
-        text_widget = tk.Text(win)
-    
-        # 3. Klucz do skalowania: fill='both' (wypełnij) i expand=True (rozszerzaj)
-        text_widget.pack(fill='both', expand=True)
-    
-        # 4. Wstaw tekst
-        text_widget.insert('1.0', 
+        statistics(f"Statystyki dla obrazu Average_{ilosc}_images[{globals_var.current_id-2}].jpg",
             f"Średni błąd porównując pierwszy obraz z wynikowym: {mean_error:.2f}\nProcent zmienionych pikseli: {percentage_changed:.4f}%\nProcent pikseli z błędem > {THRESHOLD}: {percent_sig:.4f}%")
 
     except Exception as e:
         messagebox.showerror("Błąd obliczeń", f"Wystąpił błąd: {e}")
+
+# --- operacje logiczne na zaszumionych obrazach binarnych ---
+
+def logical_filter_remove_noise(binary_img):
+    """
+    Implementacja operacji logicznych do usuwania szumu 'sól' (pojedyncze białe piksele).
+    Działa na zasadzie sprawdzania sąsiadów (góra-dół oraz lewo-prawo).
+    """
+    # Kopia obrazu roboczego
+    cleaned = binary_img.copy()
+    
+    # --- KROK 1: LOGIKA PIONOWA (Góra-Dół) ---
+    # Przesuwamy obraz o 1 piksel w górę i w dół, żeby mieć sąsiadów "pod ręką"
+    img_up = np.roll(binary_img, -1, axis=0)   # Sąsiad dolny wchodzi na miejsce bieżącego
+    img_down = np.roll(binary_img, 1, axis=0)  # Sąsiad górny wchodzi na miejsce bieżącego
+    
+    # WARUNEK LOGICZNY:
+    # Piksel jest szumem (do usunięcia), jeśli:
+    # JEST BIAŁY (255) ORAZ GÓRA JEST CZARNA (0) ORAZ DÓŁ JEST CZARNY (0)
+    mask_vertical = (binary_img == 255) & (img_up == 0) & (img_down == 0)
+    
+    # Czyścimy znalezione piksele (ustawiamy na czarno)
+    cleaned[mask_vertical] = 0
+
+    # --- KROK 2: LOGIKA POZIOMA (Lewo-Prawo) ---
+    # To samo dla sąsiadów bocznych
+    # Operujemy już na obrazie 'cleaned' (wstępnie oczyszczonym w pionie)
+    img_left = np.roll(cleaned, 1, axis=1)
+    img_right = np.roll(cleaned, -1, axis=1)
+    
+    mask_horizontal = (cleaned == 255) & (img_left == 0) & (img_right == 0)
+    
+    cleaned[mask_horizontal] = 0
+    
+    return cleaned
+
+# --- Funkcja główna do podpięcia pod przycisk ---
+def run_logical_operations_project():
+    # 1. Wybierz plik (jeden, zaszumiony obraz)
+    if globals_var.current_window in globals_var.opened_images:
+        img_info = globals_var.opened_images[globals_var.current_window]
+        # sprawdzanie czy monochromatyczny
+        if len(img_info["image"].shape) != 2:
+            messagebox.showerror("Błąd", "Obraz musi być monochromatyczny!")
+            return
+        img = img_info["image"]
+    else:
+        messagebox.showerror("Błąd", "Brak aktywnego okna z obrazem.")
+        return
+    
+    # 2. Binaryzacja (wymóg projektu - obraz musi być binarny)
+    # Treshold 127: wszystko poniżej -> czarne, powyżej -> białe
+    _, binary = cv2.threshold(img, 127, 255, cv2.THRESH_BINARY)
+    
+    # Wyświetl przed
+    show_image(binary, "Binary_Before_Logical_Filter")
+
+    # 4. Uruchom filtr logiczny
+    result = logical_filter_remove_noise(binary)
+
+    # 5. Wyświetl po
+    show_image(result, "Binary_After_Logical_Filter")
+    
+    # statystyka ile pikseli usunięto
+    diff = cv2.absdiff(binary, result)
+    removed_count = np.count_nonzero(diff)
+    statistics(f"Statystyki dla obrazu Binary_After_Logical_Filter[{globals_var.current_id-1}].jpg",
+            f"Usunięto punktów szumu: {removed_count}")
