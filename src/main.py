@@ -3,6 +3,7 @@ from tkinter import Tk, Menu # do listy rozwijanej
 from globals_var import *
 from lab1.lab1 import * 
 from lab2.lab2 import * 
+from lab3.lab3 import * 
 from projekt.projekt31 import *
 
 """Plik uruchamiający całą aplikację oraz posiadający definicję głównego okna palikacji."""

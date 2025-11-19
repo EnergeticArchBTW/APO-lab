@@ -136,11 +136,8 @@ def show_hist(data):
 
 def cal_without_supersaturation_hist(image, lut):
     """ liniowe rozciągnięcie histogramu bez przesycenia (liczenie dla jednego kanału)"""
-    # znajdź pierwszy i ostatni niepusty słupek histogramu
-    # min_val to pierwsza niezerowa wartość w lut
-    # max_val to ostatnia niezerowa wartość w lut
-    min_val = next(i for i, v in enumerate(lut) if v > 0)
-    max_val = max(i for i, v in enumerate(lut) if v > 0)
+
+    min_val, max_val = min_max_lut(lut)
 
     Lmin = 0
     Lmax = 255

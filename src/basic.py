@@ -383,3 +383,13 @@ def select_images_window():
     
     # 7. Zwrócenie wyniku po zamknięciu okna
     return selected_images
+
+def min_max_lut(lut):
+    """Zwraca pierwszy i ostatni niepusty słupek z czystej tablicy LUT."""
+    # znajdź pierwszy i ostatni niepusty słupek
+    # min_val to pierwsza niezerowa wartość w lut
+    # max_val to ostatnia niezerowa wartość w lut
+    min_val = next(i for i, v in enumerate(lut) if v > 0)
+    max_val = max(i for i, v in enumerate(lut) if v > 0)
+
+    return min_val, max_val
