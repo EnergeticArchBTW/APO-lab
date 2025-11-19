@@ -210,7 +210,7 @@ def otsu():
     dialog = Toplevel(globals_var.root)
     user_value = threshold(
         dialog, 
-        "Próg otsu czeka do akzceptacji...", 
+        "Próg otsu czeka do akceptacji...", 
         return_value_wrapper, 
         "", 
         show_result=False,
@@ -224,3 +224,54 @@ def otsu():
 
     # 4. Wyświetl wynik
     show_image(binary_image, new_file_name(Path(img_info["filename"]), f"_Otsu_{int(calculated_threshold)}"))
+
+# zad 2 p.3
+def run_adaptive_threshold():
+    """
+    Implementacja progowania adaptacyjnego (adaptive threshold). Używa metody gaussowskiej w wersji domyślnej
+    """
+    img_info, image = get_focused_mono_image()
+    if image is None:
+        return None
+
+    # 2. Pobierz parametry od użytkownika
+    # A. Block Size (Wielkość sąsiedztwa)
+    # OpenCV wymaga, aby Block Size był liczbą NIEPARZYSTĄ > 1
+    block_size = get_integer_input(globals_var.root, 
+                                   "Adaptive Threshold", 
+                                   "Podaj wielkość bloku (musi być nieparzysta, np. 11):", 
+                                   11, 3, 999)
+    if block_size is None:
+        messagebox.showerror("Błąd", "Należy podać wielkość bloku!")
+
+    # Zabezpieczenie: jeśli użytkownik poda parzystą, dodajemy 1
+    if block_size % 2 == 0:
+        block_size += 1
+        messagebox.showinfo("Info", f"Zmieniono wielkość bloku na nieparzystą: {block_size}")
+
+    # B. Stała C (Odejmowana od średniej)
+    # Wykład mówi, że C pozwala "skalować wartości", standardowo np. 2
+    c_const = get_integer_input(globals_var.root, 
+                               "Adaptive Threshold",
+                                 "Podaj stałą C (np. 2):",
+                                    2, -100, 100)
+    if c_const is None:
+        messagebox.showerror("Błąd", "Należy podać stałą C!")
+
+    # 3. Wykonanie operacji cv2.adaptiveThreshold
+    try:
+        result_img = cv2.adaptiveThreshold(
+            src=image,
+            maxValue=255, # Wartość dla pikseli "białych"
+            adaptiveMethod=cv2.ADAPTIVE_THRESH_GAUSSIAN_C, # Metoda Gaussa
+            thresholdType=cv2.THRESH_BINARY, # Typ binarny
+            blockSize=block_size, # Wielkość otoczenia 
+            C=c_const # Stała odejmowana 
+        )
+        
+        # 4. Wyświetlenie wyniku
+        suffix = f"_adapt_G_B{block_size}_C{c_const}"
+        show_image(result_img, new_file_name(Path(img_info["filename"]), suffix))
+
+    except Exception as e:
+        messagebox.showerror("Błąd", f"Wystąpił błąd OpenCV: {e}")

@@ -26,7 +26,8 @@ class MainMenu(Tk):
             run_gaussian_filter_callback, run_sobel_operator_callback, run_median_filter_callback,
             run_canny_detector_callback,
             # lab 3
-            stretch_histogram_operation_callback, threshold_preserve_gray_user_callback, otsu_callback):
+            stretch_histogram_operation_callback, threshold_preserve_gray_user_callback, otsu_callback,
+            run_adaptive_threshold_callback):
         super().__init__()
         self.title("APO laby - Michał Rymkiewicz")
         self.minsize(400, 200)  # minimalna szerokość: 400px, wysokość: 200px
@@ -84,9 +85,10 @@ class MainMenu(Tk):
         file_menu3.add_command(label="detekcja krawędzi operatorem Canyego", command=run_canny_detector_callback)
         # lab 3
         file_menu4 = Menu(menubar, tearoff=0)
-        file_menu4.add_command(label="uśrednianie obrazów", command=stretch_histogram_operation_callback)
+        file_menu4.add_command(label="Rozciąganie histogramu w zadanym przez użytkownika zakresie", command=stretch_histogram_operation_callback)
         file_menu4.add_command(label="Progowanie z dwoma progami wyznaczonymi przez użytkownika", command=threshold_preserve_gray_user_callback)
         file_menu4.add_command(label="Progowanie z progiem wyznaczonym metodą Otsu", command=otsu_callback)
+        file_menu4.add_command(label="Implementacja progowanie adaptacyjnego (adaptive threshold)", command=run_adaptive_threshold_callback)
         menubar.add_cascade(label="Lab 3", menu=file_menu4)
 
 if __name__ == "__main__":
@@ -105,6 +107,6 @@ if __name__ == "__main__":
         convert_binary_to_grayscale_mask, not_logic, and_logic, or_logic, xor_logic, show_filter_selection_window, run_gaussian_filter, run_sobel_operator,
         run_median_filter, run_canny_detector,
         # lab 3
-        stretch_histogram_operation, threshold_preserve_gray_user, otsu)
+        stretch_histogram_operation, threshold_preserve_gray_user, otsu, run_adaptive_threshold)
 
     globals_var.root.mainloop()
