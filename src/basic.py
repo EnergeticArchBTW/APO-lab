@@ -8,6 +8,7 @@ from tkinter import Toplevel, Canvas #do okna z obrazem
 from tkinter import messagebox # do błędów
 import numpy as np # do operacji na tablicach
 from PIL import Image, ImageTk  # do konwersji obrazów do formatu Tkinter
+from tkinter import simpledialog # do pobierania wartości od użytkownika
 
 """ funkcje, które są najczęściej używane w różnych miejscach """
 
@@ -393,3 +394,24 @@ def min_max_lut(lut):
     max_val = max(i for i, v in enumerate(lut) if v > 0)
 
     return min_val, max_val
+
+def get_integer_input(root, title="Podaj liczbę", inside="Wprowadź wartość:", init=0, min=0, max=255):
+    """
+    Wyświetla proste, modalne okno dialogowe proszące o liczbę całkowitą.
+    Funkcja czeka na odpowiedź użytkownika.
+    
+    Params:
+        root: Główne okno aplikacji (tk.Tk() lub Toplevel).
+        title: Tytuł okienka.
+    Returns:
+        return: Wprowadzona liczba (int) lub None, jeśli użytkownik anulował.
+    """
+    
+    value = simpledialog.askinteger(
+        title,  # Tytuł okna
+        inside,  # Tekst wewnątrz okna (prompt)
+        parent=root,  # Okno nadrzędne (dzięki temu jest modalne)
+        initialvalue=init, minvalue=min, maxvalue=max
+    )
+    
+    return value

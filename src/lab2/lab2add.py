@@ -5,7 +5,6 @@ from tkinter import Toplevel, Canvas #do okna z obrazem
 from tkinter import messagebox # do błędów
 import tkinter as tk # do tablicy LUT
 from tkinter import ttk # do tablicy LUT
-from tkinter import simpledialog # do pobierania wartości od użytkownika
 from PIL import Image, ImageTk  # do konwersji obrazów do formatu Tkinter
 import numpy as np # do operacji na tablicach
 import globals_var  # zmienne globalne
@@ -121,27 +120,6 @@ def operation_on_scalar(image, operation, value, saturation=True):
             return None
 
     return result
-
-def get_integer_input(root, title="Podaj liczbę", inside="Wprowadź wartość:", init=0, min=0, max=255):
-    """
-    Wyświetla proste, modalne okno dialogowe proszące o liczbę całkowitą.
-    Funkcja czeka na odpowiedź użytkownika.
-    
-    Params:
-        root: Główne okno aplikacji (tk.Tk() lub Toplevel).
-        title: Tytuł okienka.
-    Returns:
-        return: Wprowadzona liczba (int) lub None, jeśli użytkownik anulował.
-    """
-    
-    value = simpledialog.askinteger(
-        title,  # Tytuł okna
-        inside,  # Tekst wewnątrz okna (prompt)
-        parent=root,  # Okno nadrzędne (dzięki temu jest modalne)
-        initialvalue=init, minvalue=min, maxvalue=max
-    )
-    
-    return value
 
 # zad 2
 def and_or_xor_check(images):

@@ -328,13 +328,17 @@ def perform_gray_reduction(image, levels):
     
     return result
 
-def threshold(dialog, title, function, add_name_suffix):
+# uwaga! poniższa funkcja jest potrzebna także do np. labu 3
+def threshold(dialog, title, function, add_name_suffix, show_result=True, initial_value=128):
     """kod pokazujący okienko do progowania. można ten kod użyć jako progowanie binarne lub z zachowaniem poziomów szarości
     Args:
         dialog: okno dialogowe
         title: tytuł okna
         function: funkcja, która się uruchamia po kliknięciu zastosuj
-        add_name_suffix: dodatek do nazwy pliku wynikowego"""
+        add_name_suffix: dodatek do nazwy pliku wynikowego
+        show_result (bool): Jeśli True (domyślnie), wyświetla wynik w nowym oknie (show_image).
+                            Jeśli False, funkcja czeka na kliknięcie "Zastosuj" i zwraca obraz wynikowy.
+        initial_value: wartość początkowa suwaka (0-255)"""
     
     # Użyj bezpiecznej funkcji, która od razu sprawdza, czy obraz jest mono
     img_info, image = get_focused_mono_image() #
@@ -346,6 +350,9 @@ def threshold(dialog, title, function, add_name_suffix):
 
     dialog.title(title)
     dialog.geometry("600x520")
+
+    # Kontener na wynik (używamy listy, aby móc ją modyfikować wewnątrz funkcji zagnieżdżonej)
+    captured_result = []
     
     # ========== TUTAJ WYWOŁUJĘ HISTOGRAM ==========
     # Tworzymy ramkę na histogram (to samo co main_frame w cal_hist)
@@ -380,7 +387,7 @@ def threshold(dialog, title, function, add_name_suffix):
     
     entry = tk.Entry(control_frame)
     entry.pack(pady=5)
-    entry.insert(0, "128")  # wartość domyślna
+    entry.insert(0, str(initial_value))  # wartość domyślna
     
     # Dodanie suwaka
     def update_entry_from_slider(value):
@@ -395,7 +402,7 @@ def threshold(dialog, title, function, add_name_suffix):
         length=515,
         command=update_entry_from_slider
     )
-    slider.set(128)  # wartość domyślna
+    slider.set(initial_value)  # wartość domyślna
     slider.pack(pady=5)
     
     def apply_threshold():
@@ -405,20 +412,37 @@ def threshold(dialog, title, function, add_name_suffix):
                 messagebox.showerror("Błąd", "Wartość progu musi być z zakresu 0-255.")
                 return
             
-            dialog.destroy()
-            
             # Wykonaj progowanie binarne/z zachowaniem szarości
             result_image = function(image, threshold_value)
             
-            # Wyświetl wynik
-            title = new_file_name(Path(img_info["filename"]), f"{add_name_suffix}{threshold_value}")
-            show_image(result_image, title)
+            if show_result:
+                # Wyświetl wynik
+                dialog.destroy()
+                title = new_file_name(Path(img_info["filename"]), f"{add_name_suffix}{threshold_value}")
+                show_image(result_image, title)
+            else:
+                # Zapisz wynik do kontenera i zamknij (nie pokazuj show_image)
+                captured_result.append(result_image)
+                dialog.destroy()
             
         except ValueError:
             messagebox.showerror("Błąd", "Podaj poprawną liczbę całkowitą.")
     
     tk.Button(control_frame, text="Zastosuj", command=apply_threshold).pack(pady=10)
     tk.Button(control_frame, text="Anuluj", command=dialog.destroy).pack()
+
+    # === OBSŁUGA ZWRACANIA WYNIKU ===
+    if not show_result:
+        # Jeśli nie pokazujemy od razu, musimy CZEKAĆ aż użytkownik kliknie "Zastosuj" i okno się zamknie
+        dialog.wait_window()
+        
+        # Sprawdzamy, czy coś zostało obliczone (czy użytkownik nie kliknął Anuluj/X)
+        if captured_result:
+            return captured_result[0]
+        else:
+            return None # Użytkownik zamknął okno bez "Zastosuj"
+    
+    return None # Jeśli show_result=True, funkcja kończy się od razu (nieblokująco)
 
 def perform_binary_threshold(image, threshold):
     """
