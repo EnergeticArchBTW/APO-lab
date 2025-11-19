@@ -146,7 +146,6 @@ def stretch_histogram_operation():
     show_image(result_img, new_file_name(Path(img_info["filename"]), title_suffix))
 
 # zad 2 p.1
-
 #Implementacja progowanie z dwoma progami wyznaczonymi przez użytkownika
 def threshold_preserve_gray_user():
     """
@@ -182,3 +181,46 @@ def threshold_preserve_gray_user():
     result = cv2.inRange(image, t1, t2)
     
     show_image(result, new_file_name(Path(img_info["filename"]), f"_threshold_preserve_gray_{t1}-{t2}"))
+
+# zad 2 p.2
+
+def otsu():
+    """
+    Implementacja progowanie z progiem wyznaczonym metodą Otsu
+    """
+
+    img_info, image = get_focused_mono_image()
+    if image is None:
+        return None
+    
+    # Wywołanie cv2.threshold z flagą THRESH_OTSU
+    # Wartość progu (drugi argument) ustawiamy na 0, bo Otsu i tak ją wyliczy sam
+    calculated_threshold, binary_image = cv2.threshold(
+        image, 
+        0, 
+        255, 
+        cv2.THRESH_BINARY + cv2.THRESH_OTSU
+    )
+
+    if binary_image is None:
+        messagebox.showerror("Błąd", calculated_threshold)
+        return
+    
+    # pokaż obliczony próg do akceptacji
+    dialog = Toplevel(globals_var.root)
+    user_value = threshold(
+        dialog, 
+        "Próg otsu czeka do akzceptacji...", 
+        return_value_wrapper, 
+        "", 
+        show_result=False,
+        initial_value=calculated_threshold
+    )
+
+    #jeżeli użytkownik wymyśli coś innego
+    if user_value != calculated_threshold:
+        _, binary_image = cv2.threshold(image, user_value, 255, cv2.THRESH_BINARY)
+        calculated_threshold = user_value
+
+    # 4. Wyświetl wynik
+    show_image(binary_image, new_file_name(Path(img_info["filename"]), f"_Otsu_{int(calculated_threshold)}"))
