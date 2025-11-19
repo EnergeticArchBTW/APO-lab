@@ -20,7 +20,7 @@ from lab1.lab1add import *
 def get_bounds_from_current_image():
     """
     Pobiera histogram (zliczenia) i wylicza domyślne p1 i p2
-    dla sfocusowanych obrazów monochromatycznych i kolorowych.
+    dla sfocusowanych obrazów monochromatycznych (a dla kolorowych nic nie zwraca).
     """
     # 1. Generujemy statystykę (używamy Twojej funkcji z poprzedniego pytania)
     # Zakładam, że funkcja generate_lut jest dostępna w tym pliku lub zaimportowana
@@ -144,3 +144,41 @@ def stretch_histogram_operation():
     # Wyświetlenie wyniku
     title_suffix = f"_stretch_{p1}-{p2}_to_{q3}-{q4}"
     show_image(result_img, new_file_name(Path(img_info["filename"]), title_suffix))
+
+# zad 2 p.1
+
+#Implementacja progowanie z dwoma progami wyznaczonymi przez użytkownika
+def threshold_preserve_gray_user():
+    """
+    Funkcja progowania z zachowaniem poziomów szarości.
+    Piksele poniżej t1 ustawiane są na 0,
+    piksele powyżej t2 ustawiane są na 255,
+    a piksele pomiędzy t1 i t2 pozostają bez zmian.
+    """
+
+    img_info, image = get_focused_mono_image()
+    if image is None:
+        return None
+
+    dialog_t1 = Toplevel(globals_var.root)
+    t1 = threshold(
+        dialog_t1, 
+        "Progowanie: Wybierz próg t1", 
+        return_value_wrapper, 
+        "", 
+        show_result=False
+    )
+
+    dialog_t2 = Toplevel(globals_var.root)
+    t2 = threshold(
+        dialog_t2, 
+        "Progowanie: Wybierz próg t2", 
+        return_value_wrapper, 
+        "", 
+        show_result=False
+    )
+
+    # Tworzymy kopię obrazu, aby nie modyfikować oryginału
+    result = cv2.inRange(image, t1, t2)
+    
+    show_image(result, new_file_name(Path(img_info["filename"]), f"_threshold_preserve_gray_{t1}-{t2}"))
