@@ -415,3 +415,15 @@ def get_integer_input(root, title="Podaj liczbę", inside="Wprowadź wartość:"
     )
     
     return value
+
+def is_binary_image(image):
+    """
+    Sprawdza, czy obraz jest mapą binarną (zawiera tylko wartości 0 i 255).
+    Zwraca True jeśli obraz jest binarny, False w przeciwnym razie.
+    """
+    # Czy (piksele == 0 LUB piksele == 255) dla CAŁEGO (.all()) obrazu?
+    if ((image == 0) | (image == 255)).all():
+        return True
+    else:
+        messagebox.showerror("Błąd", "Obraz nie jest mapą binarną (zawiera inne wartości niż 0 i 255)!")
+        return False

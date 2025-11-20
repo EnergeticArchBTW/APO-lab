@@ -4,6 +4,7 @@ from globals_var import *
 from lab1.lab1 import * 
 from lab2.lab2 import * 
 from lab3.lab3 import * 
+from lab4.lab4 import * 
 from projekt.projekt31 import *
 
 """Plik uruchamiający całą aplikację oraz posiadający definicję głównego okna palikacji."""
@@ -28,7 +29,7 @@ class MainMenu(Tk):
             # lab 3
             stretch_histogram_operation_callback, threshold_preserve_gray_user_callback, otsu_callback,
             run_adaptive_threshold_callback, run_morphological_operations_callback,
-            run_skeletonization_callback):
+            run_skeletonization_callback, calculate_moments_callback):
         super().__init__()
         self.title("APO laby - Michał Rymkiewicz")
         self.minsize(400, 200)  # minimalna szerokość: 400px, wysokość: 200px
@@ -92,6 +93,7 @@ class MainMenu(Tk):
         file_menu4.add_command(label="Implementacja progowanie adaptacyjnego (adaptive threshold)", command=run_adaptive_threshold_callback)
         file_menu4.add_command(label="operacje morfologii matematycznej", command=run_morphological_operations_callback)
         file_menu4.add_command(label="szkieletyzacja", command=run_skeletonization_callback)
+        file_menu4.add_command(label="obliczanie momentu", command=calculate_moments_callback)
         menubar.add_cascade(label="Lab 3", menu=file_menu4)
 
 if __name__ == "__main__":
@@ -111,6 +113,6 @@ if __name__ == "__main__":
         run_median_filter, run_canny_detector,
         # lab 3
         stretch_histogram_operation, threshold_preserve_gray_user, otsu, run_adaptive_threshold,
-        run_morphological_operations, run_skeletonization)
+        run_morphological_operations, run_skeletonization, calculate_moments)
 
     globals_var.root.mainloop()

@@ -30,9 +30,11 @@ def convert_to_grayscale_and_save(input_path, output_path=None):
 
     return image_gray
 
-#img = convert_to_grayscale_and_save("C://Users//Michal//Downloads//test.png")
+img = convert_to_grayscale_and_save("C://Users//Michal//Desktop//APO-Projekt//data//images//przecinek.png")
+"""
 folder_path_obj = Path("C://Users//Michal//Desktop//APO-Projekt//data//images//projekt//2_przyklad")
 
 for obraz in folder_path_obj.iterdir():
     if obraz.is_file():
         convert_to_grayscale_and_save(str(obraz))
+"""
