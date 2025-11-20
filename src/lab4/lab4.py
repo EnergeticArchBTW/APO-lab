@@ -12,6 +12,7 @@ import globals_var  # zmienne globalne
 from win_thread import win_thread
 from basic import *
 import csv
+import math #do logarytmowania
 
 """funkcje zrobione na labach 4"""
 
@@ -22,8 +23,7 @@ def save_results_to_csv(data, original_filename, suffix):
     if not data:
         messagebox.showinfo("Info", "Nie znaleziono obiektów do zapisu.")
         return
-
-    #path = Path(original_filename)
+    
     path = filedialog.asksaveasfilename(
         defaultextension=".jpg",
         filetypes=[("Arkusz", "*.csv")],
@@ -45,7 +45,7 @@ def save_results_to_csv(data, original_filename, suffix):
     except Exception as e:
         messagebox.showerror("Błąd zapisu", str(e))
 
-def calculate_moments():
+def designation():
     # 1. Pobierz obraz (Wymagany mono/binarny)
     img_info, image = get_focused_mono_image()
     if image is None: return
@@ -80,22 +80,70 @@ def calculate_moments():
         cx = int(M['m10'] / M['m00']) # po m wartości p i q jak w wykładzie
         cy = int(M['m01'] / M['m00'])
 
-        # --- B. Momenty Hu (Niezmiennicze) ---
+        # --- A. Momenty Hu (Niezmiennicze) ---
         # Wykład: Moment 1 i 7 mają największą "inwariantność" 
         hu_moments = cv2.HuMoments(M).flatten()
+
+        #logarytmujemy momenty Hu dla lepszej interpretacji
+        for j in range(len(hu_moments)):
+            # Zabezpieczenie: logarytmujemy tylko jeśli nie jest zerem
+            if hu_moments[j] != 0:
+                # Wzór: -1 * znak * log10(|wartość|)
+                # Dzięki temu 10^-7 zamieni się w czytelne "7" (z odpowiednim znakiem)
+                hu_moments[j] = -1 * math.copysign(1.0, hu_moments[j]) * math.log10(abs(hu_moments[j]))
+            else:
+                hu_moments[j] = 0.0
+
+        # --- B. Pole powierzchni i obwód ---
+        # pole powierzchni - jest najczęściej wyrażane ilością pikseli wewnątrz obrysu
+        area = cv2.contourArea(contour)
+
+        # obwód - długość brzegu obiektu
+        # True oznacza, że kontur jest zamknięty (figura geometryczna)
+        perimeter = cv2.arcLength(contour, True)
+
+        # --- C. Współczynniki Kształtu ---
+        
+        # 1. Aspect Ratio & Extent (wymagają prostokąta otaczającego)
+        x, y, w, h = cv2.boundingRect(contour)
+        rect_area = w * h
+        
+        # Zabezpieczenie przed dzieleniem przez zero
+        aspect_ratio = float(w) / h if h > 0 else 0
+        extent = float(area) / rect_area if rect_area > 0 else 0
+        
+        # 2. Solidity (wymaga otoczki wypukłej - Convex Hull)
+        hull = cv2.convexHull(contour)
+        hull_area = cv2.contourArea(hull)
+        
+        solidity = float(area) / hull_area if hull_area > 0 else 0
+        
+        # 3. Equivalent Diameter
+        # średnia średnica równoważona
+        equivalent_diameter = np.sqrt(4 * area / np.pi)
         
         # Zbieramy dane do wektora cech
         # (Wykład wspomina o logarytmowaniu momentów Hu bo są małe, 
-        # ale tutaj zapisujemy surowe, ew. można dodać log10)
+        # więc dodaję log10)
         obj_data = {
             "ID Obiektu": i + 1,
+            # Podpunkt a)
             "M00 (Masa)": M['m00'],     # Moment zerowy
+            "Hu 1 (z log10)": hu_moments[0],      # momenty Hu
+            "Hu 7 (z log10)": hu_moments[6],
+            # Podpunkt b)
+            "Pole (Area)": area,
+            "Obwod (Perimeter)": perimeter,
             "Centroid X": cx,           # Współrzędna X środka
             "Centroid Y": cy,           # Współrzędna Y środka
-            "Hu 1": hu_moments[0],      # 
-            "Hu 2": hu_moments[1],
-            "Hu 3": hu_moments[2],
-            "Hu 7": hu_moments[6]       # 
+            # Podpunkt c) - Współczynniki
+            "Aspect Ratio": aspect_ratio, # Stosunek boków
+            "Extent": extent,             # Wypełnienie prostokąta
+            "Solidity": solidity,         # Masywność (Wypukłość)
+            "EquivDiameter": equivalent_diameter, # Średnica koła
+            # pomocnicze
+            "Hu 2 (z log10)": hu_moments[1],      # Momenty Hu
+            "Hu 3 (z log10)": hu_moments[2]
         }
         results.append(obj_data)
 
