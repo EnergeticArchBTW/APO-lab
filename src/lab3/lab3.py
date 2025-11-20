@@ -359,6 +359,18 @@ def run_morphological_operations():
     tk.Button(dialog, text="Zamknij", command=dialog.destroy).pack()
 
 # zad 4
+def is_binary_image(image):
+    """
+    Sprawdza, czy obraz jest mapą binarną (zawiera tylko wartości 0 i 255).
+    Zwraca True jeśli obraz jest binarny, False w przeciwnym razie.
+    """
+    # Czy (piksele == 0 LUB piksele == 255) dla CAŁEGO (.all()) obrazu?
+    if ((image == 0) | (image == 255)).all():
+        return True
+    else:
+        messagebox.showerror("Błąd", "Obraz nie jest mapą binarną (zawiera inne wartości niż 0 i 255)!")
+        return False
+
 def run_skeletonization():
     """
     szkieletyzacja obiektu na mapie binarnej
@@ -367,6 +379,9 @@ def run_skeletonization():
     # 1. Pobierz obraz (musi być mono)
     img_info, image = get_focused_mono_image()
     if image is None: return
+
+    if is_binary_image(image) == False:
+        return
 
     # 2. Binaryzacja (Wymóg: "szkieletyzacja obiektu na mapie binarnej")
     # Upewniamy się, że mamy tylko 0 i 255
