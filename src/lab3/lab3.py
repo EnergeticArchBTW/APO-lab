@@ -278,6 +278,13 @@ def run_adaptive_threshold():
 
 # zad 3
 def run_morphological_operations():
+    """
+    operacje morfologii matematycznej
+    1. Erozja
+    2. Dylacja
+    3. Otwarcie
+    4. Zamknięcie
+    """
     # 1. Pobranie obrazu (morfologia działa na szaro-odcieniowych lub binarnych)
     img_info, image = get_focused_mono_image()
     if image is None: return
@@ -350,3 +357,48 @@ def run_morphological_operations():
     btn_apply.pack(pady=20)
 
     tk.Button(dialog, text="Zamknij", command=dialog.destroy).pack()
+
+# zad 4
+def run_skeletonization():
+    """
+    szkieletyzacja obiektu na mapie binarnej
+    Implementacja algorytmu szkieletyzacji metodą erozji i dylacji.
+    """
+    # 1. Pobierz obraz (musi być mono)
+    img_info, image = get_focused_mono_image()
+    if image is None: return
+
+    # 2. Binaryzacja (Wymóg: "szkieletyzacja obiektu na mapie binarnej")
+    # Upewniamy się, że mamy tylko 0 i 255
+    _, binary = cv2.threshold(image, 127, 255, cv2.THRESH_BINARY)
+
+    # 3. Przygotowanie zmiennych
+    skeleton = np.zeros(binary.shape, np.uint8) # Pusty obraz na wynik
+    element = cv2.getStructuringElement(cv2.MORPH_CROSS, (3, 3)) # Element strukturalny (Krzyż jest dobry do szkieletów)
+    
+    # Kopia robocza obrazu
+    temp_img = binary.copy()
+
+    # 4. Pętla iteracyjna (zgodnie z wykładem)
+    while True:
+        # Erozja (zdejmowanie warstwy)
+        eroded = cv2.erode(temp_img, element)
+        
+        # Otwarcie (Erozja -> Dylacja) - próba odtworzenia kształtu z erozji
+        temp = cv2.dilate(eroded, element)
+        
+        # Różnica: to, co zniknęło podczas otwarcia, to są "cienkie linie" (szkielet)
+        temp = cv2.subtract(temp_img, temp)
+        
+        # Dodanie znalezionych fragmentów do głównego szkieletu
+        skeleton = cv2.bitwise_or(skeleton, temp)
+        
+        # Przygotowanie do następnego kroku
+        temp_img = eroded.copy()
+
+        # Warunek stopu: jeśli po erozji nie zostało nic (same zera), kończymy
+        if cv2.countNonZero(temp_img) == 0:
+            break
+
+    # 5. Wyświetlenie wyniku
+    show_image(skeleton, new_file_name(Path(img_info["filename"]), "_Skeleton"))
