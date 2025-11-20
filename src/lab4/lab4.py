@@ -158,3 +158,69 @@ def designation():
     
     # Pokaż obraz z ponumerowanymi obiektami (żeby wiedzieć który jest który w Excelu)
     show_image(preview_img, "Zidentyfikowane Obiekty")
+
+# zad 2
+def run_grabcut():
+    # 1. Pobierz obraz (najlepiej kolorowy, bo GrabCut używa koloru do analizy)
+    # Wykład: "algorytm który potrafi w obrazie kolorowym znaleźć obiekt"
+    # Jeśli masz funkcję get_focused_image (kolor), użyj jej.
+    # Jeśli masz tylko get_focused_mono_image, musisz wczytać oryginał z pliku.
+    
+    if globals_var.current_window in globals_var.opened_images:
+        img_info = globals_var.opened_images[globals_var.current_window]
+        source_img = img_info["image"]
+
+        # 2. Przygotowanie obrazu do GrabCut (Musi być 3-kanałowy/kolorowy)
+        if len(source_img.shape) == 2:
+            # Jeśli obraz w pamięci jest szary, konwertujemy go na "sztuczny" kolor (BGR)
+            # GrabCut technicznie wymaga 3 kanałów, nawet jeśli są identyczne
+            image_rgb = cv2.cvtColor(source_img, cv2.COLOR_GRAY2BGR)
+        else:
+            # Jeśli jest już kolorowy, robimy kopię, żeby nie zepsuć oryginału
+            image_rgb = source_img.copy()
+    else:
+        messagebox.showerror("Błąd", "Brak aktywnego okna z obrazem.")
+        return
+
+    # 2. Wybór prostokąta (Interakcja wbudowana w OpenCV)
+    # To otworzy okno, gdzie myszką zaznaczasz obszar i wciskasz ENTER/SPACJĘ
+    messagebox.showinfo("Instrukcja", "Zaznacz myszką prostokąt wokół obiektu i naciśnij ENTER/SPACJĘ.")
+    
+    rect = cv2.selectROI("Zaznacz Obiekt (GrabCut)", image_rgb, showCrosshair=True, fromCenter=False)
+    # Zamknij okno wyboru po zaznaczeniu
+    cv2.destroyWindow("Zaznacz Obiekt (GrabCut)")
+    
+    # Jeśli użytkownik anulował (width lub height == 0)
+    if rect[2] == 0 or rect[3] == 0:
+        return
+
+    try:
+        # 3. Przygotowanie zmiennych dla algorytmu
+        #zmienna, gdzie będzie przechwywany wynik, gdzie według algorytmu jest obiekt a gdzie tło
+        mask = np.zeros(image_rgb.shape[:2], np.uint8) # Maska inicjalizowana na 0 (tło)
+        
+        # Modele tła i obiektu (wymagane przez OpenCV, algorytm sam je wypełni)
+        # taki notatnik dla algorytmu
+        bgdModel = np.zeros((1, 65), np.float64)
+        fgdModel = np.zeros((1, 65), np.float64)
+        
+        # 4. Uruchomienie GrabCut
+        # "iteracji nie może być więcej niż 100" (tu damy np. 5 dla szybkości)
+        # Mode: GC_INIT_WITH_RECT (inicjalizacja prostokątem)
+        # w rect jest obszar, jaki zaznaczył użytkownik
+        cv2.grabCut(image_rgb, mask, rect, bgdModel, fgdModel, 5, cv2.GC_INIT_WITH_RECT)
+        
+        # 5. Przetwarzanie maski wyniku
+        # GrabCut zwraca maskę z wartościami: 0(tło pewne), 1(obiekt pewny), 2(tło prawdopodobne), 3(obiekt prawdopodobny)
+        # Musimy zamienić 0 i 2 na 0 (czarne), a 1 i 3 na 1 (białe)
+        mask2 = np.where((mask == 2) | (mask == 0), 0, 1).astype('uint8')
+        
+        # Wycięcie obiektu z obrazu (mnożenie przez maskę)
+        # newaxis dodaje wymiar, żeby pomnożyć wszystkie 3 kanały koloru
+        result_image = image_rgb * mask2[:, :, np.newaxis]
+        
+        # 6. Wyświetlenie
+        show_image(result_image, f"Wynik_GrabCut")
+
+    except Exception as e:
+        messagebox.showerror("Błąd", f"Błąd algorytmu GrabCut: {e}")

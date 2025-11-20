@@ -29,7 +29,7 @@ class MainMenu(Tk):
             # lab 3
             stretch_histogram_operation_callback, threshold_preserve_gray_user_callback, otsu_callback,
             run_adaptive_threshold_callback, run_morphological_operations_callback,
-            run_skeletonization_callback, designation_callback):
+            run_skeletonization_callback, designation_callback, run_grabcut_callback):
         super().__init__()
         self.title("APO laby - Michał Rymkiewicz")
         self.minsize(400, 200)  # minimalna szerokość: 400px, wysokość: 200px
@@ -94,6 +94,7 @@ class MainMenu(Tk):
         file_menu4.add_command(label="operacje morfologii matematycznej", command=run_morphological_operations_callback)
         file_menu4.add_command(label="szkieletyzacja", command=run_skeletonization_callback)
         file_menu4.add_command(label="wyznaczanie momentu, pola powierzchni i współczynniki kształtu", command=designation_callback)
+        file_menu4.add_command(label="segmentacja z GraphCut", command=run_grabcut_callback)
         menubar.add_cascade(label="Lab 3", menu=file_menu4)
 
 if __name__ == "__main__":
@@ -113,6 +114,6 @@ if __name__ == "__main__":
         run_median_filter, run_canny_detector,
         # lab 3
         stretch_histogram_operation, threshold_preserve_gray_user, otsu, run_adaptive_threshold,
-        run_morphological_operations, run_skeletonization, designation)
+        run_morphological_operations, run_skeletonization, designation, run_grabcut)
 
     globals_var.root.mainloop()
