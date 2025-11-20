@@ -27,7 +27,7 @@ class MainMenu(Tk):
             run_canny_detector_callback,
             # lab 3
             stretch_histogram_operation_callback, threshold_preserve_gray_user_callback, otsu_callback,
-            run_adaptive_threshold_callback):
+            run_adaptive_threshold_callback, run_morphological_operations_callback):
         super().__init__()
         self.title("APO laby - Michał Rymkiewicz")
         self.minsize(400, 200)  # minimalna szerokość: 400px, wysokość: 200px
@@ -89,6 +89,7 @@ class MainMenu(Tk):
         file_menu4.add_command(label="Progowanie z dwoma progami wyznaczonymi przez użytkownika", command=threshold_preserve_gray_user_callback)
         file_menu4.add_command(label="Progowanie z progiem wyznaczonym metodą Otsu", command=otsu_callback)
         file_menu4.add_command(label="Implementacja progowanie adaptacyjnego (adaptive threshold)", command=run_adaptive_threshold_callback)
+        file_menu4.add_command(label="operacje morfologii matematycznej", command=run_morphological_operations_callback)
         menubar.add_cascade(label="Lab 3", menu=file_menu4)
 
 if __name__ == "__main__":
@@ -107,6 +108,7 @@ if __name__ == "__main__":
         convert_binary_to_grayscale_mask, not_logic, and_logic, or_logic, xor_logic, show_filter_selection_window, run_gaussian_filter, run_sobel_operator,
         run_median_filter, run_canny_detector,
         # lab 3
-        stretch_histogram_operation, threshold_preserve_gray_user, otsu, run_adaptive_threshold)
+        stretch_histogram_operation, threshold_preserve_gray_user, otsu, run_adaptive_threshold,
+        run_morphological_operations)
 
     globals_var.root.mainloop()

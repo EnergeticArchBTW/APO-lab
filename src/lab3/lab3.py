@@ -275,3 +275,78 @@ def run_adaptive_threshold():
 
     except Exception as e:
         messagebox.showerror("Błąd", f"Wystąpił błąd OpenCV: {e}")
+
+# zad 3
+def run_morphological_operations():
+    # 1. Pobranie obrazu (morfologia działa na szaro-odcieniowych lub binarnych)
+    img_info, image = get_focused_mono_image()
+    if image is None: return
+
+    # Tworzymy okno konfiguracji
+    dialog = Toplevel(globals_var.root)
+    dialog.title("Morfologia Matematyczna")
+    dialog.geometry("300x350")
+
+    # === WYBÓR KSZTAŁTU ELEMENTU STRUKTURALNEGO ===
+    # Zgodnie z wymogiem: rozróżnienie Krzyża i Prostokąta dla 3x3
+    lbl_shape = tk.Label(dialog, text="Kształt elementu (3x3):", font=("Arial", 10, "bold"))
+    lbl_shape.pack(pady=(10, 5))
+
+    shape_var = tk.StringVar(value="RECT") # Domyślnie prostokąt
+
+    tk.Radiobutton(dialog, text="Prostokąt (Pełny)", variable=shape_var, value="RECT").pack(anchor="w", padx=20)
+    tk.Radiobutton(dialog, text="Krzyż (Plus)", variable=shape_var, value="CROSS").pack(anchor="w", padx=20)
+
+    # === WYBÓR OPERACJI ===
+    # Wykład wymienia te 4 podstawowe operacje
+    lbl_op = tk.Label(dialog, text="Operacja:", font=("Arial", 10, "bold"))
+    lbl_op.pack(pady=(15, 5))
+
+    op_var = tk.StringVar(value="ERODE") # Domyślnie Erozja
+
+    tk.Radiobutton(dialog, text="Erozja", variable=op_var, value="ERODE").pack(anchor="w", padx=20)
+    tk.Radiobutton(dialog, text="Dylacja", variable=op_var, value="DILATE").pack(anchor="w", padx=20)
+    tk.Radiobutton(dialog, text="Otwarcie", variable=op_var, value="OPEN").pack(anchor="w", padx=20)
+    tk.Radiobutton(dialog, text="Zamknięcie", variable=op_var, value="CLOSE").pack(anchor="w", padx=20)
+
+    # === FUNKCJA WYKONAWCZA ===
+    def apply_morphology():
+        try:
+            # 1. Ustalenie kształtu (Kernel)
+            # cv2.getStructuringElement generuje macierz elementu
+            selected_shape = cv2.MORPH_RECT if shape_var.get() == "RECT" else cv2.MORPH_CROSS
+            kernel = cv2.getStructuringElement(selected_shape, (3, 3))
+
+            # 2. Ustalenie typu operacji
+            op_str = op_var.get()
+            if op_str == "ERODE":
+                op_type = cv2.MORPH_ERODE
+            elif op_str == "DILATE":
+                op_type = cv2.MORPH_DILATE
+            elif op_str == "OPEN":
+                op_type = cv2.MORPH_OPEN
+            elif op_str == "CLOSE":
+                op_type = cv2.MORPH_CLOSE
+            
+            # 3. Wykonanie operacji (Używamy morphologyEx jako ogólnej funkcji)
+            # funkcja morphologyEx przyjmuje typ operacji i kernel
+            # Wykład wspomina też o borderType=BORDER_CONSTANT, co jest domyślne w OpenCV
+            result_image = cv2.morphologyEx(image, op_type, kernel)
+
+            # 4. Wyświetlenie wyniku
+            shape_name = "Rect" if shape_var.get() == "RECT" else "Cross"
+            title_suffix = f"_Morph_{op_str}_{shape_name}3x3"
+            
+            show_image(result_image, new_file_name(Path(img_info["filename"]), title_suffix))
+            
+            # zamknij okno po wykonaniu
+            dialog.destroy()
+
+        except Exception as e:
+            messagebox.showerror("Błąd", f"Wystąpił błąd OpenCV: {e}")
+
+    # Przycisk uruchamiający
+    btn_apply = tk.Button(dialog, text="Wykonaj", command=apply_morphology, bg="#dddddd", width=15)
+    btn_apply.pack(pady=20)
+
+    tk.Button(dialog, text="Zamknij", command=dialog.destroy).pack()
