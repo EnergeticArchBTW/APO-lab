@@ -189,3 +189,32 @@ def convert_to_grayscale_and_show():
     if image is None:
         return
     show_image(convert_to_grayscale(image), new_file_name(Path(img_info["filename"]), "_grayscale"))
+
+def open_and_show_images():
+    """Prosi użytkownika o wybór PLIKÓW (wielu) i wyświetla je."""
+    # Używamy askopenfilenames (z 's' na końcu)
+    file_paths = filedialog.askopenfilenames(
+        title="Wybierz obrazy",
+        initialdir=globals_var.DATA_DIR,
+        filetypes=[("Obrazy", "*.bmp;*.tif;*.png;*.jpg;*.jpeg")]
+    )
+
+    # Iterujemy po zwróconej liście ścieżek
+    if file_paths:
+        for file_path in file_paths:
+            try:
+                file_path_obj = Path(file_path)
+                
+                with open(file_path_obj, "rb") as f:
+                    file_bytes = np.asarray(bytearray(f.read()), dtype=np.uint8)
+                    image = cv2.imdecode(file_bytes, cv2.IMREAD_UNCHANGED)
+
+                if image is not None:
+                    display_name = file_path_obj.name
+                    # Wyświetlamy każdy obraz w osobnej iteracji
+                    show_image(image, title=display_name)
+                else:
+                    messagebox.showerror("Błąd", f"Nie udało się zdekodować pliku {display_name}")
+                    
+            except Exception as e:
+                messagebox.showerror("Błąd", f"Wystąpił błąd przy pliku {file_path}:\n{e}")
