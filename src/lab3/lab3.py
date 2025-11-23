@@ -90,6 +90,7 @@ def stretch_histogram_operation():
     # Jeśli użytkownik anulował, p1 będzie None
     if p1 is None:
         messagebox.showerror("Błąd", "Należy wybrać wartość p1!")
+        return
     
     dialog_p2 = Toplevel(globals_var.root)
     
@@ -105,16 +106,19 @@ def stretch_histogram_operation():
     
     if p2 is None:
         messagebox.showerror("Błąd", "Należy wybrać wartość p2!")
+        return
 
     # --- KROK C: Pobieramy q3 i q4 (Zakres wynikowy) ---
     # Tu histogram nie jest potrzebny, więc używamy prostego simpledialog
     q3 = get_number_input(globals_var.root, "Rozciąganie", "Podaj q3 (Zakres wynikowy od):")
     if q3 is None:
         messagebox.showerror("Błąd", "Należy wybrać wartość q3!")
+        return
 
     q4 = get_number_input(globals_var.root, "Rozciąganie", "Podaj q4 (Zakres wynikowy do):", 255, q3)
     if q4 is None:
         messagebox.showerror("Błąd", "Należy wybrać wartość q4!")
+        return
 
     # --- KROK D: Obliczenia (Algorytm z wykładu) ---
     # Teraz mamy wszystkie 4 zmienne: p1, p2, q3, q4
@@ -168,6 +172,9 @@ def threshold_preserve_gray_user():
         show_result=False
     )
 
+    if t1 == None:
+        return
+
     dialog_t2 = Toplevel(globals_var.root)
     t2 = threshold(
         dialog_t2, 
@@ -176,6 +183,9 @@ def threshold_preserve_gray_user():
         "", 
         show_result=False
     )
+
+    if t2 == None:
+        return
 
     # Tworzymy kopię obrazu, aby nie modyfikować oryginału
     result = cv2.inRange(image, t1, t2)
@@ -217,6 +227,9 @@ def otsu():
         initial_value=calculated_threshold
     )
 
+    if user_value is None:
+        return
+
     #jeżeli użytkownik wymyśli coś innego
     if user_value != calculated_threshold:
         _, binary_image = cv2.threshold(image, user_value, 255, cv2.THRESH_BINARY)
@@ -243,6 +256,7 @@ def run_adaptive_threshold():
                                    11, 3, 999)
     if block_size is None:
         messagebox.showerror("Błąd", "Należy podać wielkość bloku!")
+        return
 
     # Zabezpieczenie: jeśli użytkownik poda parzystą, dodajemy 1
     if block_size % 2 == 0:
@@ -257,6 +271,7 @@ def run_adaptive_threshold():
                                     2, -100, 100)
     if c_const is None:
         messagebox.showerror("Błąd", "Należy podać stałą C!")
+        return
 
     # 3. Wykonanie operacji cv2.adaptiveThreshold
     try:
