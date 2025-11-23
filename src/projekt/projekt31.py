@@ -10,6 +10,7 @@ import numpy as np # do operacji na tablicach
 import globals_var  # zmienne globalne
 from win_thread import win_thread
 from basic import *
+from convert import *
 
 """
 Udoskonalenie oprogramowania przygotowanego na zajęciach przez dołożenie operacji zmniejszenia
@@ -181,3 +182,10 @@ def run_logical_operations_project():
     removed_count = np.count_nonzero(diff)
     statistics(f"Statystyki dla obrazu Binary_After_Logical_Filter[{globals_var.current_id-1}].jpg",
             f"Usunięto punktów szumu: {removed_count}")
+
+def convert_to_grayscale_and_show():
+    """ Konwertuje aktualnie wyświetlany obraz do skali szarości i pokazuje go w nowym oknie """
+    img_info, image = get_focused_image_data()
+    if image is None:
+        return
+    show_image(convert_to_grayscale(image), new_file_name(Path(img_info["filename"]), "_grayscale"))
