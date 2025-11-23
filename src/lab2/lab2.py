@@ -89,15 +89,8 @@ def add_images_with_saturation():
 
 def add_number_with_stauration():
     """funkcja dodająca skalar do obrazu Z WYSYCENIEM (saturacją, czyli obcinaniem) z GUI"""
-    if globals_var.current_window in globals_var.opened_images:
-        img_info = globals_var.opened_images[globals_var.current_window]
-        # sprawdzanie czy monochromatyczny
-        if len(img_info["image"].shape) != 2:
-            messagebox.showerror("Błąd", "Obraz musi być jednokanałowy (czarno-biały)!")
-            return
-        image = img_info["image"]
-    else:
-        messagebox.showerror("Błąd", "Brak aktywnego okna z obrazem.")
+    img_info, image = get_focused_mono_image()
+    if image is None:
         return
     
     value = get_number_input(globals_var.root, "Dodawanie z wysyceniem - podaj wartość całkowitą")
@@ -110,15 +103,8 @@ def add_number_with_stauration():
 
 def add_number_without_stauration():
     """funkcja dodająca skalar do obrazu BEZ WYSYCENIA (z zawijaniem) z GUI"""
-    if globals_var.current_window in globals_var.opened_images:
-        img_info = globals_var.opened_images[globals_var.current_window]
-        # sprawdzanie czy monochromatyczny
-        if len(img_info["image"].shape) != 2:
-            messagebox.showerror("Błąd", "Obraz musi być jednokanałowy (czarno-biały)!")
-            return
-        image = img_info["image"]
-    else:
-        messagebox.showerror("Błąd", "Brak aktywnego okna z obrazem.")
+    img_info, image = get_focused_mono_image()
+    if image is None:
         return
     
     value = get_number_input(globals_var.root, "Dodawanie bez wysyceniem - podaj wartość całkowitą")
@@ -131,15 +117,8 @@ def add_number_without_stauration():
 
 def divide_number_with_stauration():
     """funkcja dzieląca obraz przez skalar Z WYSYCENIEM (saturacją, czyli obcinaniem) z GUI"""
-    if globals_var.current_window in globals_var.opened_images:
-        img_info = globals_var.opened_images[globals_var.current_window]
-        # sprawdzanie czy monochromatyczny
-        if len(img_info["image"].shape) != 2:
-            messagebox.showerror("Błąd", "Obraz musi być jednokanałowy (czarno-biały)!")
-            return
-        image = img_info["image"]
-    else:
-        messagebox.showerror("Błąd", "Brak aktywnego okna z obrazem.")
+    img_info, image = get_focused_mono_image()
+    if image is None:
         return
     
     value = get_number_input(globals_var.root, "Dzielenie z wysyceniem - podaj wartość całkowitą")
@@ -152,15 +131,8 @@ def divide_number_with_stauration():
 
 def divide_number_without_stauration():
     """funkcja dzieląca obraz przez skalar BEZ WYSYCENIA (z zawijaniem) z GUI"""
-    if globals_var.current_window in globals_var.opened_images:
-        img_info = globals_var.opened_images[globals_var.current_window]
-        # sprawdzanie czy monochromatyczny
-        if len(img_info["image"].shape) != 2:
-            messagebox.showerror("Błąd", "Obraz musi być jednokanałowy (czarno-biały)!")
-            return
-        image = img_info["image"]
-    else:
-        messagebox.showerror("Błąd", "Brak aktywnego okna z obrazem.")
+    img_info, image = get_focused_mono_image()
+    if image is None:
         return
     
     value = get_number_input(globals_var.root, "Dzielenie bez wysyceniem - podaj wartość całkowitą")
@@ -173,15 +145,8 @@ def divide_number_without_stauration():
 
 def multiply_number_with_stauration():
     """funkcja mnożąca obraz przez skalar Z WYSYCENIEM (saturacją, czyli obcinaniem) z GUI"""
-    if globals_var.current_window in globals_var.opened_images:
-        img_info = globals_var.opened_images[globals_var.current_window]
-        # sprawdzanie czy monochromatyczny
-        if len(img_info["image"].shape) != 2:
-            messagebox.showerror("Błąd", "Obraz musi być jednokanałowy (czarno-biały)!")
-            return
-        image = img_info["image"]
-    else:
-        messagebox.showerror("Błąd", "Brak aktywnego okna z obrazem.")
+    img_info, image = get_focused_mono_image()
+    if image is None:
         return
     
     value = get_number_input(globals_var.root, "Mnożenie z wysyceniem - podaj wartość","Wprowadź wartość:",0,0,255,True)
@@ -194,15 +159,8 @@ def multiply_number_with_stauration():
 
 def multiply_number_without_stauration():
     """funkcja mnożąca obraz przez skalar BEZ WYSYCENIA (z zawijaniem) z GUI"""
-    if globals_var.current_window in globals_var.opened_images:
-        img_info = globals_var.opened_images[globals_var.current_window]
-        # sprawdzanie czy monochromatyczny
-        if len(img_info["image"].shape) != 2:
-            messagebox.showerror("Błąd", "Obraz musi być jednokanałowy (czarno-biały)!")
-            return
-        image = img_info["image"]
-    else:
-        messagebox.showerror("Błąd", "Brak aktywnego okna z obrazem.")
+    img_info, image = get_focused_mono_image()
+    if image is None:
         return
     
     value = get_number_input(globals_var.root, "Mnożenie bez wysycenia - podaj wartość","Wprowadź wartość:",0,0,255,True)
