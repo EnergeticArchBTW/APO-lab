@@ -152,33 +152,22 @@ def logical_filter_remove_noise(binary_img):
 
 # --- Funkcja główna do podpięcia pod przycisk ---
 def run_logical_operations_project():
-    # 1. Wybierz plik (jeden, zaszumiony obraz)
-    if globals_var.current_window in globals_var.opened_images:
-        img_info = globals_var.opened_images[globals_var.current_window]
-        # sprawdzanie czy monochromatyczny
-        if len(img_info["image"].shape) != 2:
-            messagebox.showerror("Błąd", "Obraz musi być monochromatyczny!")
-            return
-        img = img_info["image"]
-    else:
-        messagebox.showerror("Błąd", "Brak aktywnego okna z obrazem.")
+    img_info, img = get_focused_image_data()
+    if img is None:
         return
     
-    # 2. Binaryzacja (wymóg projektu - obraz musi być binarny)
-    # Treshold 127: wszystko poniżej -> czarne, powyżej -> białe
-    _, binary = cv2.threshold(img, 127, 255, cv2.THRESH_BINARY)
-    
-    # Wyświetl przed
-    show_image(binary, "Binary_Before_Logical_Filter")
+    # jeżeli obraz nie jest binarny, to błąd
+    if is_binary_image(img) == False:
+        return
 
     # 4. Uruchom filtr logiczny
-    result = logical_filter_remove_noise(binary)
+    result = logical_filter_remove_noise(img)
 
     # 5. Wyświetl po
-    show_image(result, "Binary_After_Logical_Filter")
+    show_image(result, "Binary_Logical_Filter")
     
     # statystyka ile pikseli usunięto
-    diff = cv2.absdiff(binary, result)
+    diff = cv2.absdiff(img, result)
     removed_count = np.count_nonzero(diff)
     statistics(f"Statystyki dla obrazu Binary_After_Logical_Filter[{globals_var.current_id-1}].jpg",
             f"Usunięto punktów szumu: {removed_count}")
