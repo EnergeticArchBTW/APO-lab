@@ -395,7 +395,7 @@ def min_max_lut(lut):
 
     return min_val, max_val
 
-def get_integer_input(root, title="Podaj liczbę", inside="Wprowadź wartość:", init=0, min=0, max=255):
+def get_number_input(root, title="Podaj liczbę", inside="Wprowadź wartość:", init=0, min=0, max=255, is_float=False):
     """
     Wyświetla proste, modalne okno dialogowe proszące o liczbę całkowitą.
     Funkcja czeka na odpowiedź użytkownika.
@@ -406,13 +406,25 @@ def get_integer_input(root, title="Podaj liczbę", inside="Wprowadź wartość:"
     Returns:
         return: Wprowadzona liczba (int) lub None, jeśli użytkownik anulował.
     """
-    
-    value = simpledialog.askinteger(
-        title,  # Tytuł okna
-        inside,  # Tekst wewnątrz okna (prompt)
-        parent=root,  # Okno nadrzędne (dzięki temu jest modalne)
-        initialvalue=init, minvalue=min, maxvalue=max
-    )
+
+    if is_float:
+        # Używamy askfloat dla liczb zmiennoprzecinkowych
+        value = simpledialog.askfloat(
+            title, 
+            inside, 
+            parent=root, 
+            initialvalue=init, 
+            minvalue=min, 
+            maxvalue=max
+        )
+    else:
+        # Używamy askinteger dla liczb całkowitych
+        value = simpledialog.askinteger(
+            title,  # Tytuł okna
+            inside,  # Tekst wewnątrz okna (prompt)
+            parent=root,  # Okno nadrzędne (dzięki temu jest modalne)
+            initialvalue=init, minvalue=min, maxvalue=max
+        )
     
     return value
 

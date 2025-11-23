@@ -63,15 +63,15 @@ def operation_on_scalar(image, operation, value, saturation=True):
         return None
 
     # --- Logika operacji ---
+
+    # Używamy tymczasowo float64, aby uniknąć błędów przepełnienia
+    # przed ostatecznym obcięciem.
+    temp_image = image.astype(np.float64)
     
     if saturation:
         # ==================================
         # === TRYB Z WYSYCENIEM (obcinanie) ===
         # ==================================
-        
-        # Używamy tymczasowo float64, aby uniknąć błędów przepełnienia
-        # przed ostatecznym obcięciem.
-        temp_image = image.astype(np.float64)
 
         if operation == 'add':
             result_float = temp_image + value
@@ -91,33 +91,54 @@ def operation_on_scalar(image, operation, value, saturation=True):
         result = result_clipped.astype(np.uint8)
 
     else:
-        # =====================================
-        # === TRYB BEZ WYSYCENIA (zawijanie) ===
-        # =====================================
-        
-        # Celowo rzutujemy na uint8 na końcu, aby wymusić arytmetykę modulo 256
+        # ========================================================
+        # === TRYB 2: BEZ WYSYCENIA, zawijanie (Skalowanie - Wymóg z zadania) ===
+        # ========================================================
+        # "Zapewnienie braku wysycenia przez uprzednie zawężenie poziomów szarości"
         
         if operation == 'add':
-            # Używamy int32, aby (200 + 100) dało 300, 
-            # a dopiero potem rzutowanie (300 % 256 = 44)
-            result = (image.astype(np.int32) + int(value)).astype(np.uint8)
+            # Sytuacja: Chcemy dodać 'value' (np. 100).
+            # Żeby nie wyjść poza 255, piksele wejściowe muszą mieć max (255 - 100) = 155.
+            # Musimy więc "ścisnąć" (zawęzić) histogram obrazu do zakresu [0, 155].
             
+            limit = 255.0 - value
+            if limit < 0: limit = 0 # Zabezpieczenie, gdy dodajemy > 255
+            
+            # Współczynnik skalowania (np. 155/255 = 0.6)
+            scale_factor = limit / 255.0
+            
+            # 1. Uprzednie zawężenie (obraz robi się ciemniejszy)
+            narrowed_image = temp_image * scale_factor
+            
+            # 2. Właściwe dodawanie
+            result_float = narrowed_image + value
+
         elif operation == 'multiply':
-            # Używamy int32, aby (200 * 2) dało 400,
-            # a dopiero potem rzutowanie (400 % 256 = 144)
-            result = (image.astype(np.int32) * int(value)).astype(np.uint8)
+            # Sytuacja: Chcemy pomnożyć przez 'value' (np. 2).
+            # Żeby nie wyjść poza 255, piksele wejściowe muszą mieć max (255 / 2) = 127.5.
             
+            if value > 1:
+                # 1. Uprzednie zawężenie (dzielimy obraz przez mnożnik)
+                narrowed_image = temp_image / value
+                
+                # 2. Właściwe mnożenie
+                # (Matematycznie wracamy do punktu wyjścia, ale spełniamy wymóg braku przepełnienia)
+                result_float = narrowed_image * value
+            else:
+                # Mnożenie przez ułamek (np. 0.5) zmniejsza wartości, więc jest bezpieczne
+                result_float = temp_image * value
+
         elif operation == 'divide':
-            # Dzielenie z natury nie "zawija się" w ten sam sposób.
-            # Najbliższą analogią jest wykonanie dzielenia na floatach
-            # i rzutowanie wyniku na uint8, co zawinie wartości > 255
-            # (np. dzielenie przez 0.5 da mnożenie * 2)
-            result_float = image.astype(np.float64) / value
-            result = np.round(result_float).astype(np.uint8)
+            # Dzielenie zawsze zmniejsza wartość (dla value > 1), więc nie ma ryzyka wysycenia w górę
+            result_float = temp_image / value
             
         else:
             messagebox.showerror("Błąd operacji", f"Nieznana operacja: '{operation}'.")
             return None
+        
+        # Na koniec rzutujemy. Dzięki skalowaniu clip teoretycznie nic nie utnie,
+        # ale zabezpiecza przed błędami zaokrągleń (np. 255.00001).
+        result = np.clip(np.round(result_float), 0, 255).astype(np.uint8)
 
     return result
 
@@ -312,7 +333,7 @@ def get_border_options():
         # [cite_start]Zapytaj o wartość 'n' TYLKO, gdy jest potrzebna [cite: 86]
         if mode in ["CONSTANT", "CUSTOM_BORDER"]:
             # Ważne: ten dialog jest "dzieckiem" okna 'dialog'
-            get_integer_input(dialog, "Wartość stałej 'n'", "Podaj wartość stałą 'n' (0-255):")
+            get_number_input(dialog, "Wartość stałej 'n'", "Podaj wartość stałą 'n' (0-255):")
             
             if value_n is None:
                 # Użytkownik anulował wpisywanie liczby - traktujemy to jak "Anuluj"

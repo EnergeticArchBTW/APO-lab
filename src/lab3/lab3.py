@@ -108,11 +108,11 @@ def stretch_histogram_operation():
 
     # --- KROK C: Pobieramy q3 i q4 (Zakres wynikowy) ---
     # Tu histogram nie jest potrzebny, więc używamy prostego simpledialog
-    q3 = get_integer_input(globals_var.root, "Rozciąganie", "Podaj q3 (Zakres wynikowy od):")
+    q3 = get_number_input(globals_var.root, "Rozciąganie", "Podaj q3 (Zakres wynikowy od):")
     if q3 is None:
         messagebox.showerror("Błąd", "Należy wybrać wartość q3!")
 
-    q4 = get_integer_input(globals_var.root, "Rozciąganie", "Podaj q4 (Zakres wynikowy do):", 255, q3)
+    q4 = get_number_input(globals_var.root, "Rozciąganie", "Podaj q4 (Zakres wynikowy do):", 255, q3)
     if q4 is None:
         messagebox.showerror("Błąd", "Należy wybrać wartość q4!")
 
@@ -237,7 +237,7 @@ def run_adaptive_threshold():
     # 2. Pobierz parametry od użytkownika
     # A. Block Size (Wielkość sąsiedztwa)
     # OpenCV wymaga, aby Block Size był liczbą NIEPARZYSTĄ > 1
-    block_size = get_integer_input(globals_var.root, 
+    block_size = get_number_input(globals_var.root, 
                                    "Adaptive Threshold", 
                                    "Podaj wielkość bloku (musi być nieparzysta, np. 11):", 
                                    11, 3, 999)
@@ -251,7 +251,7 @@ def run_adaptive_threshold():
 
     # B. Stała C (Odejmowana od średniej)
     # Wykład mówi, że C pozwala "skalować wartości", standardowo np. 2
-    c_const = get_integer_input(globals_var.root, 
+    c_const = get_number_input(globals_var.root, 
                                "Adaptive Threshold",
                                  "Podaj stałą C (np. 2):",
                                     2, -100, 100)

@@ -100,7 +100,7 @@ def add_number_with_stauration():
         messagebox.showerror("Błąd", "Brak aktywnego okna z obrazem.")
         return
     
-    value = get_integer_input(globals_var.root, "Dodawanie z wysyceniem - podaj wartość całkowitą")
+    value = get_number_input(globals_var.root, "Dodawanie z wysyceniem - podaj wartość całkowitą")
     if value is None:
         return  # Użytkownik anulował
     
@@ -121,7 +121,7 @@ def add_number_without_stauration():
         messagebox.showerror("Błąd", "Brak aktywnego okna z obrazem.")
         return
     
-    value = get_integer_input(globals_var.root, "Dodawanie bez wysyceniem - podaj wartość całkowitą")
+    value = get_number_input(globals_var.root, "Dodawanie bez wysyceniem - podaj wartość całkowitą")
     if value is None:
         return  # Użytkownik anulował
     
@@ -142,7 +142,7 @@ def divide_number_with_stauration():
         messagebox.showerror("Błąd", "Brak aktywnego okna z obrazem.")
         return
     
-    value = get_integer_input(globals_var.root, "Dzielenie z wysyceniem - podaj wartość całkowitą")
+    value = get_number_input(globals_var.root, "Dzielenie z wysyceniem - podaj wartość całkowitą")
     if value is None:
         return  # Użytkownik anulował
     
@@ -163,7 +163,7 @@ def divide_number_without_stauration():
         messagebox.showerror("Błąd", "Brak aktywnego okna z obrazem.")
         return
     
-    value = get_integer_input(globals_var.root, "Dzielenie bez wysyceniem - podaj wartość całkowitą")
+    value = get_number_input(globals_var.root, "Dzielenie bez wysyceniem - podaj wartość całkowitą")
     if value is None:
         return  # Użytkownik anulował
     
@@ -184,7 +184,7 @@ def multiply_number_with_stauration():
         messagebox.showerror("Błąd", "Brak aktywnego okna z obrazem.")
         return
     
-    value = get_integer_input(globals_var.root, "Mnożenie z wysyceniem - podaj wartość całkowitą")
+    value = get_number_input(globals_var.root, "Mnożenie z wysyceniem - podaj wartość","Wprowadź wartość:",0,0,255,True)
     if value is None:
         return  # Użytkownik anulował
     
@@ -205,7 +205,7 @@ def multiply_number_without_stauration():
         messagebox.showerror("Błąd", "Brak aktywnego okna z obrazem.")
         return
     
-    value = get_integer_input(globals_var.root, "Mnożenie bez wysyceniem - podaj wartość całkowitą")
+    value = get_number_input(globals_var.root, "Mnożenie bez wysycenia - podaj wartość","Wprowadź wartość:",0,0,255,True)
     if value is None:
         return  # Użytkownik anulował
     
@@ -293,7 +293,7 @@ def convert_binary_to_grayscale_mask():
         return
         
     # 3. Zapytanie użytkownika o siłę rozmycia
-    blur_strength = get_integer_input(globals_var.root, "Podaj siłę rozmycia (Im wyższa, tym miększe przejście.):")
+    blur_strength = get_number_input(globals_var.root, "Podaj siłę rozmycia (Im wyższa, tym miększe przejście.):")
     
     if blur_strength is None: # Użytkownik kliknął "Anuluj"
         return
@@ -582,7 +582,7 @@ def run_median_filter():
         return
 
     # 3. Zapytaj o rozmiar otoczenia (interaktywnie)
-    ksize = get_integer_input(globals_var.root, "Zadanie 4: Filtr Medianowy", "Podaj rozmiar otoczenia (3, 5, 7 lub 9):", 3)
+    ksize = get_number_input(globals_var.root, "Zadanie 4: Filtr Medianowy", "Podaj rozmiar otoczenia (3, 5, 7 lub 9):", 3)
     
     if ksize is None:
         return # Anulowano
@@ -680,13 +680,13 @@ def run_canny_detector():
         return
 
     # 3. Pobierz dolny próg (Threshold1) - WYMAGANY
-    threshold1 = get_integer_input(globals_var.root, "Zadanie 5: Operator Canny'ego (1/2)", "Podaj dolny próg (Threshold 1):", 50)
+    threshold1 = get_number_input(globals_var.root, "Zadanie 5: Operator Canny'ego (1/2)", "Podaj dolny próg (Threshold 1):", 50)
     
     if threshold1 is None:
         return # Użytkownik kliknął "Anuluj"
 
     # 4. Pobierz górny próg (Threshold2) - OPCJONALNY
-    threshold2 = get_integer_input(globals_var.root, "Zadanie 5: Operator Canny'ego (2/2)", "Podaj górny próg (Threshold 2):\n\n(Kliknij 'Anuluj', aby automatycznie ustawić 3 x próg dolny)")
+    threshold2 = get_number_input(globals_var.root, "Zadanie 5: Operator Canny'ego (2/2)", "Podaj górny próg (Threshold 2):\n\n(Kliknij 'Anuluj', aby automatycznie ustawić 3 x próg dolny)")
 
     # 5. Ustaw wartość Threshold2
     if threshold2 is None:
