@@ -95,6 +95,19 @@ def show_image(image, title="Podgląd obrazu"):
         update_image()
 
     canvas.bind("<MouseWheel>", on_mousewheel)
+    # --- na linuxa: obsługa Button-4 i Button-5 ---
+    def on_linux_scroll_up(event):
+        win.zoom *= 1.1
+        update_image()
+
+    def on_linux_scroll_down(event):
+        win.zoom *= 1/1.1
+        update_image()
+
+    canvas.bind("<Button-4>", on_linux_scroll_up)
+    canvas.bind("<Button-5>", on_linux_scroll_down)
+    # ------
+
     win.bind("<FocusIn>", lambda e: setattr(globals_var, "current_window", win))
 
     # --------- obsługa maksymalizacji i zmiany rozmiaru okna ---------
@@ -102,7 +115,18 @@ def show_image(image, title="Podgląd obrazu"):
 
     def on_resize_or_maximize(event):
         """Obsługuje zdarzenie zmiany rozmiaru lub stanu okna (np. maksymalizacji)."""
-        current_state = win.state()
+        
+        # --- Uniwersalne sprawdzanie stanu (Linux/Windows) ---
+        try:
+            # Linux: rzuca błąd na Windowsie, ale na Linuxie zwraca True/1 gdy zmaksymalizowane
+            if win.attributes('-zoomed'):
+                current_state = 'zoomed'
+            else:
+                current_state = 'normal'
+        except:
+            # Windows: tutaj wchodzimy, gdy atrybut '-zoomed' nie istnieje
+            current_state = win.state()
+        # ----------------------------------------------------------
 
         # Sprawdzamy, czy okno *właśnie* zostało zmaksymalizowane
         # (przeszło ze stanu 'normal' lub innego do 'zoomed')
