@@ -23,7 +23,7 @@ def save_image():
         # Prośba o lokalizację i nazwę pliku
         file_path = filedialog.asksaveasfilename(
             defaultextension=".jpg",
-            filetypes=[("Obrazy", "*.bmp;*.tif;*.png;*.jpg;*.jpeg")],
+            filetypes=[("Obrazy", "*.bmp *.tif *.png *.jpg *.jpeg")],
             initialdir=globals_var.OUTPUT_DIR, # <-- domyślny folder
             initialfile=img_info["filename"]
         )
@@ -47,7 +47,7 @@ def open_and_show_image():
     file_path = filedialog.askopenfilename(
         title="Wybierz obraz",
         initialdir=globals_var.DATA_DIR, # <-- domyślny folder
-        filetypes=[("Obrazy", "*.bmp;*.tif;*.png;*.jpg;*.jpeg")]
+        filetypes=[("Obrazy", "*.bmp *.tif *.png *.jpg *.jpeg")]
     )
     if file_path:
         # Wczytaj plik jako bajty, potem zdekoduj przez OpenCV (by polskie nazwy działały)

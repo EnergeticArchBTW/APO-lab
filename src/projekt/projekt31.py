@@ -185,7 +185,7 @@ def open_and_show_images():
     file_paths = filedialog.askopenfilenames(
         title="Wybierz obrazy",
         initialdir=globals_var.DATA_DIR,
-        filetypes=[("Obrazy", "*.bmp;*.tif;*.png;*.jpg;*.jpeg")]
+        filetypes=[("Obrazy", "*.bmp *.tif *.png *.jpg *.jpeg")]
     )
 
     # Iterujemy po zwróconej liście ścieżek
