@@ -207,3 +207,48 @@ def open_and_show_images():
                     
             except Exception as e:
                 messagebox.showerror("Błąd", f"Wystąpił błąd przy pliku {file_path}:\n{e}")
+
+def scal_logic(image, scale_percent):
+    """
+    Logika dla skalowania obrazów. zwraca wyskalowany obraz.
+    
+    :param image: obraz wejściowy
+    :param scale_percent: nowa wielkość w %
+    """
+    # Oblicz nowe wymiary
+    # img.shape[1] to szerokość, img.shape[0] to wysokość
+    width = int(image.shape[1] * scale_percent / 100)
+    height = int(image.shape[0] * scale_percent / 100)
+    dim = (width, height)
+
+    # Zmień rozmiar (resize)
+    # Używamy interpolacji INTER_AREA, która jest najlepsza do pomniejszania
+    resized = cv2.resize(image, dim, interpolation=cv2.INTER_AREA)
+    return resized
+
+def scal():
+    """
+    Skalowanie jednego obrazu w %
+    """
+    img_info, image = get_focused_image_data()
+    if image is None:
+        return
+    
+    scale_percent = get_number_input(globals_var.root)
+
+    resized = scal_logic(image, scale_percent)
+
+    # 5. Wyświetl wyniki
+    show_image(resized, new_file_name(Path(img_info["filename"]), f"_X{scale_percent}Resized"))
+
+def scal_many_img():
+    """
+    skalowanie wielu obrazów na raz
+    """
+    images = select_images_window()
+
+    scale_percent = get_number_input(globals_var.root)
+
+    for img in images:
+        resized = scal_logic(img, scale_percent)
+        show_image(resized, f"_X{scale_percent}Resized")
