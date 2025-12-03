@@ -173,9 +173,6 @@ def calandshow_without_supersaturation_hist():
 
     image_stretched = None
 
-    #img_info = globals_var.opened_images[globals_var.current_window]
-    #image = img_info["image"]
-
     img_info, image = get_focused_image_data()
     if image is None:
         return
@@ -195,8 +192,6 @@ def calandshow_without_supersaturation_hist():
 def calandshow_with_supersaturation5_hist():
     """ liniowe rozciągnięcie histogramu z 5% przesyceniem i pokazanie obrazu"""
     image_stretched = None
-    #img_info = globals_var.opened_images[globals_var.current_window]
-    #image = img_info["image"]
 
     img_info, image = get_focused_image_data()
     if image is None:

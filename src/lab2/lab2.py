@@ -621,7 +621,6 @@ def run_canny_detector():
     """
     Zadanie 5: Implementacja detekcji krawędzi operatorem Canny'ego.
     
-    Wersja zmodyfikowana:
     1. Pyta o próg minimalny (wymagany).
     2. Pyta o próg maksymalny (opcjonalny).
     3. Jeśli użytkownik anuluje drugie okno, próg maksymalny = 3 * minimalny.
