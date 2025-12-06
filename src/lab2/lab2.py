@@ -55,7 +55,6 @@ def add_images_without_saturation():
     result = np.round(sum_images).astype(np.uint8)
     
     show_image(result, f"without_sat")
-    #globals_var.current_id += 1
 
 def add_images_with_saturation():
     """funkcja dodająca od 2 do 5 obrazów Z WYSYCENIEM (saturacją, czyli obcinaniem) z GUI
@@ -224,7 +223,7 @@ def convert_grayscale_to_binary_mask():
         return
         
     # 3. wartość progu
-    threshold_value = 128
+    threshold_value = get_number_input(globals_var.root, "Progowanie", "Podaj próg odcięcia (0-255):", 128)
         
     # 4. ALGORYTM: Progowanie (Thresholding)
     # Funkcja cv2.threshold zwraca próg oraz obraz
@@ -246,8 +245,7 @@ def convert_binary_to_grayscale_mask():
         return
 
     # 2. Sprawdzenie, czy obraz jest monochromatyczny
-    if len(image.shape) != 2:
-        messagebox.showerror("Błąd", "Operacja działa tylko na obrazach monochromatycznych (binarnych).")
+    if is_binary_image(image) == False:
         return
         
     # 3. Zapytanie użytkownika o siłę rozmycia
