@@ -348,7 +348,7 @@ def run_gaussian_filter():
     wymagane 3 tryby obsługi brzegów.
     """
     
-    # 1. Pobierz aktywny obraz (użycie twojej funkcji)
+    # 1. Pobierz aktywny obraz
     img_info, image = get_focused_image_data()
     if image is None:
         return # Błąd został już wyświetlony
