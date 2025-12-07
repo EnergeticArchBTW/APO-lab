@@ -43,33 +43,33 @@ KERNEL_PREWITT_E = np.array([[-1, 0, 1],
                            [-1, 0, 1], 
                            [-1, 0, 1]], dtype=np.float32)
 
-KERNEL_PREWITT_NE = np.array([[-1, -1, 0], 
+KERNEL_PREWITT_NE = np.array([[0, 1, 1], 
                             [-1,  0, 1], 
-                            [ 0,  1, 1]], dtype=np.float32)
+                            [ -1,  -1, 0]], dtype=np.float32)
 
 KERNEL_PREWITT_N  = np.array([[ 1,  1,  1],
                               [ 0,  0,  0],
                               [-1, -1, -1]], dtype=np.float32)
 
-KERNEL_PREWITT_NW = np.array([[ 0,  1,  1],
-                              [-1,  0,  1],
-                              [-1, -1,  0]], dtype=np.float32)
+KERNEL_PREWITT_NW = np.array([[ 1,  1,  0],
+                              [ 1,  0, -1],
+                              [ 0, -1, -1]], dtype=np.float32)
 
 KERNEL_PREWITT_W  = np.array([[ 1,  0, -1],
                               [ 1,  0, -1],
                               [ 1,  0, -1]], dtype=np.float32)
 
-KERNEL_PREWITT_SW = np.array([[ 1,  1,  0],
+KERNEL_PREWITT_SW = np.array([[ 0, -1, -1],
                               [ 1,  0, -1],
-                              [ 0, -1, -1]], dtype=np.float32)
+                              [ 1,  1,  0]], dtype=np.float32)
 
 KERNEL_PREWITT_S  = np.array([[-1, -1, -1],
                               [ 0,  0,  0],
                               [ 1,  1,  1]], dtype=np.float32)
 
-KERNEL_PREWITT_SE = np.array([[ 0, -1, -1],
-                              [ 1,  0, -1],
-                              [ 1,  1,  0]], dtype=np.float32)
+KERNEL_PREWITT_SE = np.array([[-1, -1,  0],
+                              [-1,  0,  1],
+                              [ 0,  1,  1]], dtype=np.float32)
 # -------------------------------------------------------
 
 # Słownik mapujący nazwy wyświetlane na funkcje i kernele dla funkcji show_filter_selection_window() z lab2.py
@@ -77,11 +77,14 @@ FILTER_MAP = {
     # Wygładzanie
     "Wygładzanie: Uśredniające": {
         "func": menu_smooth_avg, 
-        "kernel": globals_var.KERNEL_AVG
+        "kernel": globals_var.KERNEL_AVG,
+        # mnożnik, by na ekranie były pokazane wartości całkowite
+        "multiply": 9.0
     },
     "Wygładzanie: Ważone (Krzyż)": {
         "func": menu_smooth_weighted, 
-        "kernel": globals_var.KERNEL_WEIGHTED_AVG
+        "kernel": globals_var.KERNEL_WEIGHTED_AVG,
+        "multiply": 5.0
     },
     
     # Wyostrzanie

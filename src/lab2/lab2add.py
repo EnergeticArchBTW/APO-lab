@@ -287,7 +287,7 @@ def get_border_options():
     Pyta użytkownika o 3 opcje, a jeśli to konieczne, pyta również 
     o wartość stałej 'n'.
     
-    [cite_start]Zgodnie z wykładem[cite: 86, 87, 94]:
+    Zgodnie z wykładem:
     1. BORDER_REFLECT
     2. BORDER_CONSTANT (OpenCV)
     3. Wypełnienie ramki wyniku stałą (Niestandardowe)
@@ -298,7 +298,7 @@ def get_border_options():
               lub None, jeśli użytkownik anulował.
     """
     
-    # Używamy prostego Toplevel, jak wspomniano w poleceniu (przez globals_var.root)
+    # Używamy prostego Toplevel
     dialog = Toplevel(globals_var.root)
     dialog.title("Wybierz Opcje Brzegów")
     
@@ -315,7 +315,7 @@ def get_border_options():
     
     ttk.Label(frame, text="Wybierz sposób uzupełnienia marginesów:").pack(anchor='w', pady=5)
 
-    # [cite_start]Opcje zgodne z zadaniem i wykładem [cite: 86, 87, 94, 95]
+    # Opcje zgodne z zadaniem i wykładem
     ttk.Radiobutton(frame, text="Odbicie lustrzane (BORDER_REFLECT)", 
                     variable=choice_var, value="REFLECT").pack(anchor='w')
                     
@@ -330,7 +330,7 @@ def get_border_options():
         mode = choice_var.get()
         value_n = 0
         
-        # [cite_start]Zapytaj o wartość 'n' TYLKO, gdy jest potrzebna [cite: 86]
+        # Zapytaj o wartość 'n' TYLKO, gdy jest potrzebna
         if mode in ["CONSTANT", "CUSTOM_BORDER"]:
             # Ważne: ten dialog jest "dzieckiem" okna 'dialog'
             get_number_input(dialog, "Wartość stałej 'n'", "Podaj wartość stałą 'n' (0-255):")
@@ -520,7 +520,10 @@ def show_filter_selection_window():
         """Wywoływana przy zmianie w Combobox."""
         selected_name = combo.get()
         # Znajdź kernel w słowniku
-        kernel_data = globals_var.FILTER_MAP[selected_name]["kernel"]
+        kernel_data = \
+        globals_var.FILTER_MAP[selected_name]["kernel"] * \
+        globals_var.FILTER_MAP[selected_name].get("multiply", 1)
+        #globals_var.FILTER_MAP[selected_name]["multiply"]
         
         # Sformatuj kernel (zaokrąglamy dla czytelności filtrów uśredniających)
         kernel_str = str(np.round(kernel_data, 3))

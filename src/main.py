@@ -30,7 +30,9 @@ class MainMenu(Tk):
             # lab 3
             stretch_histogram_operation_callback, threshold_preserve_gray_user_callback, otsu_callback,
             run_adaptive_threshold_callback, run_morphological_operations_callback,
-            run_skeletonization_callback, designation_callback, run_grabcut_callback):
+            run_skeletonization_callback, 
+            # lab 4
+            designation_callback, run_grabcut_callback):
         super().__init__()
         self.title("APO laby - Michał Rymkiewicz")
         self.minsize(400, 200)  # minimalna szerokość: 400px, wysokość: 200px
@@ -138,6 +140,8 @@ if __name__ == "__main__":
         run_median_filter, run_canny_detector,
         # lab 3
         stretch_histogram_operation, threshold_preserve_gray_user, otsu, run_adaptive_threshold,
-        run_morphological_operations, run_skeletonization, designation, run_grabcut)
+        run_morphological_operations, run_skeletonization,
+        # lab 4
+        designation, run_grabcut)
 
     globals_var.root.mainloop()
