@@ -11,6 +11,7 @@ import numpy as np # do operacji na tablicach
 import globals_var  # zmienne globalne
 from win_thread import win_thread
 from basic import *
+from lab3.lab3add import *
 from lab2.lab2add import *
 from lab1.lab1add import * 
 
@@ -48,13 +49,6 @@ def get_bounds_from_current_image():
         """
 
     return p1, p2
-
-def return_value_wrapper(image, value):
-    """
-    Ta funkcja 'oszukuje' funkcję threshold(). Zamiast zwracać obraz,
-    zwraca samą wartość liczbową z suwaka.
-    """
-    return value
 
 # --- GŁÓWNA FUNKCJA: Rozciąganie Histogramu ---
 def stretch_histogram_operation():
