@@ -10,6 +10,7 @@ import numpy as np # do operacji na tablicach
 import globals_var  # zmienne globalne
 from win_thread import win_thread
 from basic import *
+import sys #do sprawdzania systemu
 
 """funkcje do labów 1, które wewnętrznie coś robią i nie są bezpośrednio wywoływane"""
 
@@ -99,14 +100,25 @@ def show_hist(data):
     """ Rysuje histogram w oknie.
     funkcja przyjmuje main_frame, norm, var_max, bar_width, mean, std, median_value, total_pixels, color (kolor histogramu) """
 
-    # canvas = tk.Canvas(okno, width=570, height=580, bg='white')
-    # canvas.pack()
+    # Sprawdzanie czy to linux
+    IS_LINUX = sys.platform.startswith('linux')
+
+    if IS_LINUX:
+        CANVAS_HEIGHT = 300
+        TEXT_X = {"mean": 100, "std": 300, "med": 500, "px": 300}
+        TEXT_Y = {"mean": 260, "std": 260, "med": 260, "px": 275}
+        X_OFFSET = 10
+    else:
+        CANVAS_HEIGHT = 290
+        TEXT_X = {"mean": 80, "std": 240, "med": 380, "px": 490}
+        TEXT_Y = {"mean": 260, "std": 260, "med": 260, "px": 260}
+        X_OFFSET = -19
 
     # Utwórz osobny Canvas dla każdego histogramu
-    canvas = tk.Canvas(data["main_frame"], width=570, height=290, bg='white')
+    canvas = tk.Canvas(data["main_frame"], width=570, height=CANVAS_HEIGHT, bg='white')
     canvas.pack()  # automatycznie układa pod spodem
     # ramka pokazująca obszar histogramu
-    canvas.create_rectangle(0, 0, 570, 290, outline='lightgray', width=1)
+    canvas.create_rectangle(0, 0, 570, CANVAS_HEIGHT, outline='lightgray', width=1)
             
     # rysowanie słupków (przesunięte o 50 w prawo i w górę by zrobić miejsce na opisy)
     for i, height in enumerate(data["norm"]):
@@ -126,13 +138,13 @@ def show_hist(data):
     canvas.create_text(50 - 19 + 255 * data["bar_width"], 235, text='255', anchor='n')
 
     # średnia jasność
-    canvas.create_text(80, 260, text=f"Średnia jasność: {data["mean"]:.2f}", anchor='n')
+    canvas.create_text(TEXT_X["mean"], TEXT_Y["mean"], text=f"Średnia jasność: {data["mean"]:.2f}", anchor='n')
     # odchylenie standardowe
-    canvas.create_text(240, 260, text=f"Odchylenie standardowe: {data["std"]:.2f}", anchor='n')
+    canvas.create_text(TEXT_X["std"], TEXT_Y["std"], text=f"Odchylenie standardowe: {data["std"]:.2f}", anchor='n')
     # mediana
-    canvas.create_text(380, 260, text=f"Mediana: {data["median_value"]}", anchor='n')
+    canvas.create_text(TEXT_X["med"], TEXT_Y["med"], text=f"Mediana: {data["median_value"]}", anchor='n')
     # liczba pikseli
-    canvas.create_text(490, 260, text=f"Liczba pikseli: {data["total_pixels"]}", anchor='n')
+    canvas.create_text(TEXT_X["px"], TEXT_Y["px"], text=f"Liczba pikseli: {data["total_pixels"]}", anchor='n')
 
 def cal_without_supersaturation_hist(image, lut):
     """ liniowe rozciągnięcie histogramu bez przesycenia (liczenie dla jednego kanału)"""
