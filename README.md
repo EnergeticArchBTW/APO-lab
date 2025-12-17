@@ -14,7 +14,6 @@ Aplikacja do przetwarzania i analizy obrazów realizowana w ramach laboratoriów
 Sklonuj repozytorium
 ```text
 git clone https://github.com/EnergeticArchBTW/APO-lab.git
-
 ```
 
 ### 2. Konfiguracja (Windows)
