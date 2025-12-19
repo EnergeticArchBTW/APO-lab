@@ -107,12 +107,10 @@ def show_hist(data):
         CANVAS_HEIGHT = 300
         TEXT_X = {"mean": 100, "std": 300, "med": 500, "px": 300}
         TEXT_Y = {"mean": 260, "std": 260, "med": 260, "px": 275}
-        X_OFFSET = 10
     else:
         CANVAS_HEIGHT = 290
         TEXT_X = {"mean": 80, "std": 240, "med": 380, "px": 490}
         TEXT_Y = {"mean": 260, "std": 260, "med": 260, "px": 260}
-        X_OFFSET = -19
 
     # Utwórz osobny Canvas dla każdego histogramu
     canvas = tk.Canvas(data["main_frame"], width=570, height=CANVAS_HEIGHT, bg='white')
