@@ -1,6 +1,22 @@
-# APO-lab
+# Aplikacja do Przetwarzania Obrazów (APO)
 
-Aplikacja do przetwarzania i analizy obrazów realizowana w ramach laboratoriów APO.
+Projekt realizowany w ramach zajęć "Algorytmy przetwarzania obrazów" w roku akademickim 2025/2026 (semestr zimowy).
+
+## 📝 Opis projektu
+
+Aplikacja stanowi kompleksowe narzędzie do edycji i analizy obrazów cyfrowych. Została stworzona w celu praktycznej implementacji algorytmów i funkcji przetwarzania grafiki, zgodnie z wytycznymi programowymi przedmiotu. Program umożliwia testowanie różnorodnych operacji na obrazach w przyjaznym środowisku graficznym.
+
+## 🛠 Technologie
+
+Projekt został w całości napisany w języku **Python**.
+
+| Technologia | Zastosowanie |
+| --- | --- |
+| **OpenCV (cv2)** | Przetwarzanie sygnałów, operacje na macierzach obrazu. |
+| **Tkinter** | Obsługa GUI, okna `Toplevel`, tablice LUT, dialogi systemowe. |
+| **Pillow (PIL)** | Konwersja formatów i renderowanie podglądu w GUI. |
+| **NumPy** | Niskopoziomowe operacje na pikselach. |
+| **Pathlib** | Zarządzanie ścieżkami plików niezależnie od systemu operacyjnego. |
 
 ## Wymagania
 
@@ -41,15 +57,3 @@ pip install -r requirements.txt
 python3 main.py
 
 ```
-
----
-
-## Zestawienie technologii
-
-| Technologia | Zastosowanie |
-| --- | --- |
-| **OpenCV (cv2)** | Przetwarzanie sygnałów, operacje na macierzach obrazu. |
-| **Tkinter** | Obsługa GUI, okna `Toplevel`, tablice LUT, dialogi systemowe. |
-| **Pillow (PIL)** | Konwersja formatów i renderowanie podglądu w GUI. |
-| **NumPy** | Niskopoziomowe operacje na pikselach. |
-| **Pathlib** | Zarządzanie ścieżkami plików niezależnie od systemu operacyjnego. |
