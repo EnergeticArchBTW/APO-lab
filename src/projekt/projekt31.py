@@ -29,6 +29,7 @@ def statistics(title, text):
     text_widget.config(state='disabled')  # tylko do odczytu
 
 def averaging_photos():
+    """stwozenie mniej zaszumionego obrazu z wielu innych obrazów"""
     images = select_images_window()
 
     # 1. Wczesna walidacja (czy w ogóle mamy co robić)
