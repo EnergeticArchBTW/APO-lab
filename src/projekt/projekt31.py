@@ -53,10 +53,12 @@ def averaging_photos():
             return
     
     # czy wszystkie obrazy są monochromatyczne?
+    """
     for img in images:
         if len(img.shape) != 2:
             messagebox.showerror("Błąd", "Wszystkie obrazy muszą być monochromatyczne!")
             return
+    """
 
     # --- 3. blok obliczeniowy ---
     try:
