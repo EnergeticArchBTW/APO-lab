@@ -45,70 +45,104 @@ def averaging_photos():
     if not (first_dims == 2 or (first_dims == 3 and first_shape[2] == 3)):
         messagebox.showerror("Błąd", "Pierwszy obraz nie jest ani monochromatyczny, ani kolorowy (RGB)!")
         return
-
+    
     # Sprawdzamy, czy wszystkie kolejne obrazy są DOKŁADNIE takie same jak pierwszy
     for img in images[1:]:
         if img.shape != first_shape:
-            messagebox.showerror("Błąd", "Wszystkie obrazy muszą mieć te same wymiary i typ (mono/kolor)!")
+            messagebox.showerror("Błąd", "Wszystkie obrazy muszą mieć te same wymiary i typ (mono/kolor/binarny)!")
             return
+    
+    # jeżeli pierwszy obraz jest binarny to pozostałe też muszą być binarne
+    # Tworzymy listę prawda/fałsz dla każdego obrazka
+    is_bin_list = [is_binary_image(img, False) for img in images]
+    # Jeśli zbiór unikalnych wartości ma więcej niż 1 element, to znaczy, że są różne typy
+    if len(set(is_bin_list)) > 1:
+        messagebox.showerror("Błąd", "Mieszane typy obrazów! Wszystkie muszą być binarne albo wszystkie szare/kolorowe.")
+        return
 
     # --- 3. blok obliczeniowy ---
-    try:
-        # Używamy np.float64 dla maksymalnej precyzji, aby uniknąć błędów zaokrągleń
-        sum_images = np.zeros_like(images[0], dtype=np.float64)
-        ilosc = len(images)
 
+    ilosc = len(images)
+
+    if is_binary_image(images[0], False):
+        # Pobieramy wymiary pierwszego obrazu
+        h, w = images[0].shape
+        
+        # Tworzymy "akumulator" - pustą planszę na sumy
+        # Używamy float lub int16/32, żeby nie przekręcić licznika (overflow) przy dodawaniu 255
+        accumulator = np.zeros((h, w), dtype=np.float32)
+        
+        # Sumujemy wszystkie obrazy "nałożone na siebie"
         for img in images:
-            # dodawanie i dzielenie na bieżąco
-            sum_images += img.astype(np.float64) / ilosc
+            accumulator += img
+            
+        # Obliczamy próg (threshold)
+        # Jeśli mamy N obrazów, to większość to (N / 2).
+        # Ponieważ wartości to 255, to próg wynosi: (N / 2) * 255
+        n_images = len(images)
+        threshold = (n_images / 2) * 255
+        
+        # Wynik: Gdzie suma > próg -> tam wygrywa biały (255), w przeciwnym razie czarny (0)
+        result = np.zeros((h, w), dtype=np.uint8)
+        
+        # Dzięki Numpy: tam gdzie warunek spełniony, wstawiamy 255
+        result[accumulator > threshold] = 255
+    else: 
+        try:
+            # Używamy np.float64 dla maksymalnej precyzji, aby uniknąć błędów zaokrągleń
+            sum_images = np.zeros_like(images[0], dtype=np.float64)
 
-        # Konwersja z powrotem na uint8 (0-255)
-        # np.clip upewnia się, że minimalne błędy float nie wyjdą poza zakres
-        result = np.clip(np.round(sum_images), 0, 255).astype(np.uint8)
+            for img in images:
+                # dodawanie i dzielenie na bieżąco
+                sum_images += img.astype(np.float64) / ilosc
 
-        # 4. Wyświetlanie wyniku
-        # Wynik 'result' będzie miał ten sam kształt (mono lub kolor) co obrazy wejściowe
-        show_image(result, f"Average_{ilosc}_images")
+            # Konwersja z powrotem na uint8 (0-255)
+            # np.clip upewnia się, że minimalne błędy float nie wyjdą poza zakres
+            result = np.clip(np.round(sum_images), 0, 255).astype(np.uint8)
 
-        # --- pokazanie różnicy bezwzględnej między pierwszym obrazem a wynikiem ---
-        img_oryginal_float = images[0].astype(np.float64)
-        img_result_float = result.astype(np.float64)
+        except Exception as e:
+            messagebox.showerror("Błąd obliczeń", f"Wystąpił błąd: {e}")
+    
+    # 4. Wyświetlanie wyniku
+    # Wynik 'result' będzie miał ten sam kształt (mono lub kolor) co obrazy wejściowe
+    show_image(result, f"Average_{ilosc}_images")
 
-        abs_diff = cv2.absdiff(img_oryginal_float, img_result_float)
-        # wzmocnienie
-        SCALING_FACTOR = 100 
-        scaled_diff = abs_diff * SCALING_FACTOR
+    # --- pokazanie różnicy bezwzględnej między pierwszym obrazem a wynikiem ---
+    img_oryginal_float = images[0].astype(np.float64)
+    img_result_float = result.astype(np.float64)
 
-        #obcięcie do 0-255
-        clipped_diff = np.clip(scaled_diff, 0, 255)
+    abs_diff = cv2.absdiff(img_oryginal_float, img_result_float)
+    # wzmocnienie
+    SCALING_FACTOR = 100 
+    scaled_diff = abs_diff * SCALING_FACTOR
 
-        # konwersja do uint8
-        final_diff_image = clipped_diff.astype(np.uint8)
-        show_image(final_diff_image, "Absolute_Difference_First_Image_and_Resultx100")
-        # --------------------
+    #obcięcie do 0-255
+    clipped_diff = np.clip(scaled_diff, 0, 255)
 
-        # --- pokazanie statystyk w osobnym oknie ---
-        # średni błąd
-        mean_error = np.mean(abs_diff)
+    # konwersja do uint8
+    final_diff_image = clipped_diff.astype(np.uint8)
+    show_image(final_diff_image, "Absolute_Difference_First_Image_and_Resultx100")
+    # --------------------
+        
+    # --- pokazanie statystyk w osobnym oknie ---
+    # średni błąd
+    mean_error = np.mean(abs_diff)
 
-        # procent zmienionych pikseli
-        # count_nonzero() zlicza piksele, gdzie różnica jest większa od 0
-        changed_pixels_count = np.count_nonzero(abs_diff)
-        total_pixels = abs_diff.size
-        percentage_changed = (changed_pixels_count / total_pixels) * 100
+    # procent zmienionych pikseli
+    # count_nonzero() zlicza piksele, gdzie różnica jest większa od 0
+    changed_pixels_count = np.count_nonzero(abs_diff)
+    total_pixels = abs_diff.size
+    percentage_changed = (changed_pixels_count / total_pixels) * 100
 
-        # procent pikseli z błędem większym niż 5
-        THRESHOLD = 5
-        pixels_significant = np.count_nonzero(abs_diff > THRESHOLD)
-        percent_sig = (pixels_significant / total_pixels) * 100
-        # --------------------
+    # procent pikseli z błędem większym niż 5
+    THRESHOLD = 5
+    pixels_significant = np.count_nonzero(abs_diff > THRESHOLD)
+    percent_sig = (pixels_significant / total_pixels) * 100
+    # --------------------
 
-        # --- pokazanie statystyk w oknie ---
-        statistics(f"Statystyki dla obrazu Average_{ilosc}_images[{globals_var.current_id-2}].jpg",
-            f"Średni błąd porównując pierwszy obraz z wynikowym: {mean_error:.2f}\nProcent zmienionych pikseli: {percentage_changed:.4f}%\nProcent pikseli z błędem > {THRESHOLD}: {percent_sig:.4f}%")
-
-    except Exception as e:
-        messagebox.showerror("Błąd obliczeń", f"Wystąpił błąd: {e}")
+    # --- pokazanie statystyk w oknie ---
+    statistics(f"Statystyki dla obrazu Average_{ilosc}_images[{globals_var.current_id-2}].jpg",
+        f"Średni błąd porównując pierwszy obraz z wynikowym: {mean_error:.2f}\nProcent zmienionych pikseli: {percentage_changed:.4f}%\nProcent pikseli z błędem > {THRESHOLD}: {percent_sig:.4f}%")
 
 # --- operacje logiczne na zaszumionych obrazach binarnych ---
 
