@@ -209,6 +209,13 @@ def convert_to_grayscale_and_show():
         return
     show_image(convert_to_grayscale(image), new_file_name(Path(img_info["filename"]), "_grayscale"))
 
+def convert_many_images_to_grayscale_and_show():
+    """ Konwertuje wiele obrazów do skali szarości i pokazuje je w nowych oknach """
+    images = select_images_window()
+    for img in images:
+        gray_img = convert_to_grayscale(img)
+        show_image(gray_img, "_grayscale")
+
 def open_and_show_images():
     """Prosi użytkownika o wybór PLIKÓW (wielu) i wyświetla je."""
     # Używamy askopenfilenames (z 's' na końcu)
