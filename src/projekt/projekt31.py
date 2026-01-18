@@ -51,14 +51,6 @@ def averaging_photos():
         if img.shape != first_shape:
             messagebox.showerror("Błąd", "Wszystkie obrazy muszą mieć te same wymiary i typ (mono/kolor)!")
             return
-    
-    # czy wszystkie obrazy są monochromatyczne?
-    """
-    for img in images:
-        if len(img.shape) != 2:
-            messagebox.showerror("Błąd", "Wszystkie obrazy muszą być monochromatyczne!")
-            return
-    """
 
     # --- 3. blok obliczeniowy ---
     try:
@@ -123,6 +115,7 @@ def averaging_photos():
 def logical_filter_remove_noise(binary_img):
     """
     Implementacja operacji logicznych do usuwania szumu 'sól' (pojedyncze białe piksele).
+    oraz 'pieprz' (pojedyncze czarne piksele) z obrazów binarnych.
     Działa na zasadzie sprawdzania sąsiadów (góra-dół oraz lewo-prawo).
     """
     # Kopia obrazu roboczego
@@ -133,6 +126,7 @@ def logical_filter_remove_noise(binary_img):
     img_up = np.roll(binary_img, -1, axis=0)   # Sąsiad dolny wchodzi na miejsce bieżącego
     img_down = np.roll(binary_img, 1, axis=0)  # Sąsiad górny wchodzi na miejsce bieżącego
     
+    # "sól"
     # WARUNEK LOGICZNY:
     # Piksel jest szumem (do usunięcia), jeśli:
     # JEST BIAŁY (255) ORAZ GÓRA JEST CZARNA (0) ORAZ DÓŁ JEST CZARNY (0)
@@ -141,6 +135,16 @@ def logical_filter_remove_noise(binary_img):
     # Czyścimy znalezione piksele (ustawiamy na czarno)
     cleaned[mask_vertical] = 0
 
+    # "pieprz"
+    # WARUNEK LOGICZNY:
+    # Piksel jest szumem (do usunięcia), jeśli:
+    # JEST CZARNY (0) ORAZ GÓRA JEST BIAŁA (255) ORAZ DÓŁ JEST BIAŁA (255)
+    mask_vertical = (binary_img == 0) & (img_up == 255) & (img_down == 255)
+    
+    # Czyścimy znalezione piksele (ustawiamy na biało)
+    cleaned[mask_vertical] = 255
+
+    # "sól" ponownie, bo mogły się pojawić nowe po czyszczeniu "pieprzu"
     # --- KROK 2: LOGIKA POZIOMA (Lewo-Prawo) ---
     # To samo dla sąsiadów bocznych
     # Operujemy już na obrazie 'cleaned' (wstępnie oczyszczonym w pionie)
@@ -150,11 +154,34 @@ def logical_filter_remove_noise(binary_img):
     mask_horizontal = (cleaned == 255) & (img_left == 0) & (img_right == 0)
     
     cleaned[mask_horizontal] = 0
+
+    # "pieprz"
+    mask_horizontal = (cleaned == 0) & (img_left == 255) & (img_right == 255)
+    cleaned[mask_horizontal] = 255
+
+    # Porównujemy oryginał (binary_img) z wersją końcową (cleaned)
     
-    return cleaned
+    # Sól usunięta: Było BIAŁE (255), a jest CZARNE (0)
+    final_salt_removed = (binary_img == 255) & (cleaned == 0)
+    
+    # Pieprz usunięty: Było CZARNE (0), a jest BIAŁE (255)
+    final_pepper_removed = (binary_img == 0) & (cleaned == 255)
+
+    ret = {
+        # liczniki usuniętych pikseli
+        "salt_count": np.count_nonzero(final_salt_removed),
+        "pepper_count": np.count_nonzero(final_pepper_removed),
+        #obraz wynikowy
+        "cleaned_image": cleaned
+    }
+    
+    return ret
 
 # --- Funkcja główna do podpięcia pod przycisk ---
 def run_logical_operations_project():
+    """
+    Aktywacja redukcji szumu logicznego na aktualnie wyświetlanym obrazie binarnym
+    """
     img_info, img = get_focused_image_data()
     if img is None:
         return
@@ -167,13 +194,13 @@ def run_logical_operations_project():
     result = logical_filter_remove_noise(img)
 
     # 5. Wyświetl po
-    show_image(result, "Binary_Logical_Filter")
+    show_image(result["cleaned_image"], "Binary_Logical_Filter")
     
     # statystyka ile pikseli usunięto
-    diff = cv2.absdiff(img, result)
+    diff = cv2.absdiff(img, result["cleaned_image"])
     removed_count = np.count_nonzero(diff)
     statistics(f"Statystyki dla obrazu Binary_After_Logical_Filter[{globals_var.current_id-1}].jpg",
-            f"Usunięto punktów szumu: {removed_count}")
+            f"Usunięto punktów szumu: {removed_count}\nSól (białe punkty): {result['salt_count']}\nPieprz (czarne punkty): {result['pepper_count']}")
 
 def convert_to_grayscale_and_show():
     """ Konwertuje aktualnie wyświetlany obraz do skali szarości i pokazuje go w nowym oknie """
