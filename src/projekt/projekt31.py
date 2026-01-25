@@ -46,10 +46,10 @@ def averaging_photos():
         messagebox.showerror("Błąd", "Pierwszy obraz nie jest ani monochromatyczny, ani kolorowy (RGB)!")
         return
     
-    # Sprawdzamy, czy wszystkie kolejne obrazy są DOKŁADNIE takie same jak pierwszy
+    # Sprawdzamy, czy wszystkie kolejne obrazy mają takie same wymiary jak pierwszy
     for img in images[1:]:
         if img.shape != first_shape:
-            messagebox.showerror("Błąd", "Wszystkie obrazy muszą mieć te same wymiary i typ (mono/kolor/binarny)!")
+            messagebox.showerror("Błąd", "Wszystkie obrazy muszą mieć te same wymiary (mono/kolor/binarny)!")
             return
     
     # jeżeli pierwszy obraz jest binarny to pozostałe też muszą być binarne
@@ -79,8 +79,7 @@ def averaging_photos():
         # Obliczamy próg (threshold)
         # Jeśli mamy N obrazów, to większość to (N / 2).
         # Ponieważ wartości to 255, to próg wynosi: (N / 2) * 255
-        n_images = len(images)
-        threshold = (n_images / 2) * 255
+        threshold = (ilosc / 2) * 255
         
         # Wynik: Gdzie suma > próg -> tam wygrywa biały (255), w przeciwnym razie czarny (0)
         result = np.zeros((h, w), dtype=np.uint8)
@@ -113,7 +112,7 @@ def averaging_photos():
 
     abs_diff = cv2.absdiff(img_oryginal_float, img_result_float)
     # wzmocnienie
-    SCALING_FACTOR = 100 
+    SCALING_FACTOR = 5
     scaled_diff = abs_diff * SCALING_FACTOR
 
     #obcięcie do 0-255
